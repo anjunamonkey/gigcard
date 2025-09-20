@@ -46,31 +46,33 @@ export default function MapScreen() {
   return (
     <ScrollView style={styles.container}>
       <Text style={styles.title}>Locations & Venues</Text>
-      <View style={styles.viewToggle}>
-        {showCountryPill && (
-          <TouchableOpacity 
-            style={[styles.toggleButton, view === 'country' && styles.toggleButtonActive]}
-            onPress={() => { setView('country'); setSelectedCountry(null); setSelectedCity(null); }}
-          >
-            <Text style={[styles.toggleText, view === 'country' && styles.toggleTextActive]}>Country</Text>
-          </TouchableOpacity>
-        )}
-        {showCityPill && (
-          <TouchableOpacity 
-            style={[styles.toggleButton, view === 'city' && styles.toggleButtonActive]}
-            onPress={() => { setView('city'); setSelectedCity(null); }}
-          >
-            <Text style={[styles.toggleText, view === 'city' && styles.toggleTextActive]}>City</Text>
-          </TouchableOpacity>
-        )}
-        {showVenuePill && (
-          <TouchableOpacity 
-            style={[styles.toggleButton, view === 'venue' && styles.toggleButtonActive]}
-            onPress={() => setView('venue')}
-          >
-            <Text style={[styles.toggleText, view === 'venue' && styles.toggleTextActive]}>Venues</Text>
-          </TouchableOpacity>
-        )}
+      <View style={styles.pillsContainer}>
+        <View style={styles.viewToggle}>
+          {showCountryPill && (
+            <TouchableOpacity 
+              style={[styles.toggleButton, view === 'country' && styles.toggleButtonActive]}
+              onPress={() => { setView('country'); setSelectedCountry(null); setSelectedCity(null); }}
+            >
+              <Text style={[styles.toggleText, view === 'country' && styles.toggleTextActive]}>Country</Text>
+            </TouchableOpacity>
+          )}
+          {showCityPill && (
+            <TouchableOpacity 
+              style={[styles.toggleButton, view === 'city' && styles.toggleButtonActive]}
+              onPress={() => { setView('city'); setSelectedCity(null); }}
+            >
+              <Text style={[styles.toggleText, view === 'city' && styles.toggleTextActive]}>City</Text>
+            </TouchableOpacity>
+          )}
+          {showVenuePill && (
+            <TouchableOpacity 
+              style={[styles.toggleButton, view === 'venue' && styles.toggleButtonActive]}
+              onPress={() => setView('venue')}
+            >
+              <Text style={[styles.toggleText, view === 'venue' && styles.toggleTextActive]}>Venues</Text>
+            </TouchableOpacity>
+          )}
+        </View>
       </View>
 
       {/* Pills content */}
@@ -117,20 +119,22 @@ export default function MapScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#fff', padding: 16 },
-  title: { fontSize: 24, fontWeight: 'bold', color: '#0B1533', marginBottom: 20 },
+  container: { flex: 1, backgroundColor: '#fff', padding: 0 },
+  title: { fontSize: 28, fontWeight: 'bold', color: '#0B1533', marginTop: 18, marginLeft: 18, marginBottom: 20 },
+  pillsContainer: { marginHorizontal: 18 }, // new wrapper for pills
   viewToggle: { 
     flexDirection: 'row', 
     backgroundColor: '#f0f0f0', 
     borderRadius: 25, 
     padding: 4, 
-    marginBottom: 20 
+    marginBottom: 20,
   },
   toggleButton: { 
     flex: 1, 
     paddingVertical: 10, 
     alignItems: 'center', 
-    borderRadius: 20 
+    borderRadius: 20,
+    // removed marginHorizontal
   },
   toggleButtonActive: { backgroundColor: '#E94F4F' },
   toggleText: { color: '#666', fontWeight: 'bold' },
@@ -140,6 +144,7 @@ const styles = StyleSheet.create({
     borderRadius: 12, 
     padding: 20, 
     marginBottom: 16,
+    marginHorizontal: 18,
     borderLeftWidth: 4,
     borderLeftColor: '#E94F4F'
   },

@@ -5,29 +5,29 @@ const { width } = Dimensions.get('window');
 const placeholderImage = require('../assets/images/react-logo.png');
 const carouselFeatures = [
   {
-    title: 'Regions in 25+ countries',
-    image: placeholderImage,
-    description: 'Unlock regions and stats for gigs in over 25 countries.'
-  },
-  {
-    title: 'Advanced Stats',
-    image: placeholderImage,
-    description: 'See detailed gig and artist statistics.'
-  },
-  {
     title: 'Unlimited Memories',
     image: placeholderImage,
-    description: 'Save unlimited gig memories and photos.'
+    description: 'Save unlimited gig memories and photos.',
   },
   {
-    title: 'Custom Themes',
+    title: 'Advanced Analytics',
     image: placeholderImage,
-    description: 'Personalize your app with custom themes.'
+    description: 'See stats for festivals, venue types, gig lengths, and day/night gigs.',
   },
   {
-    title: 'Early Access Features',
+    title: 'Pro Badges & Achievements',
     image: placeholderImage,
-    description: 'Get new features before anyone else.'
+    description: 'Unlock exclusive badges and achievements for Pro users.',
+  },
+  {
+    title: 'Log Gigs in Multiple Countries',
+    image: placeholderImage,
+    description: 'Track and log gigs across different countries.',
+  },
+  {
+    title: 'Video Memories',
+    image: placeholderImage,
+    description: 'Attach and save videos to your gig memories.',
   },
 ];
 
@@ -36,8 +36,9 @@ export default function GigCardProPage() {
   const scrollRef = useRef(null);
   return (
     <View style={styles.container}>
+      <Text style={styles.title}>GigCard Pro</Text>
       <View style={styles.hero}>
-        <Text style={styles.heroTitle}>Premium</Text>
+        {/* <Text style={styles.heroTitle}>Premium</Text> */}
         <Text style={styles.heroSubtitle}>One purchase unlocks all features</Text>
       </View>
       <View style={styles.carouselWrap}>
@@ -65,17 +66,22 @@ export default function GigCardProPage() {
           ))}
         </View>
       </View>
-      <Text style={styles.priceText}>One-time purchase: <Text style={{ fontWeight: 'bold' }}>£1.99</Text></Text>
-      <TouchableOpacity style={styles.joinBtn} onPress={() => {/* TODO: handle join action */}}>
-        <Text style={styles.joinBtnText}>Unlock Premium</Text>
-      </TouchableOpacity>
-      <Text style={styles.restoreText}>Restore Purchase</Text>
+      <View style={styles.centerContent}>
+        <Text style={styles.priceText}>
+          One-time purchase: <Text style={{ fontWeight: 'bold' }}>£1.99/month</Text>
+        </Text>
+        <TouchableOpacity style={styles.joinBtn} onPress={() => {/* TODO: handle join action */}}>
+          <Text style={styles.joinBtnText}>Unlock Premium</Text>
+        </TouchableOpacity>
+        <Text style={styles.restoreText}>Restore Purchase</Text>
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F7F8FA', alignItems: 'center', paddingTop: 0 },
+  container: { flex: 1, backgroundColor: '#F7F8FA', alignItems: 'flex-start', paddingTop: 0 },
+  title: { fontSize: 28, fontWeight: 'bold', color: '#0B1533', marginTop: 18, marginLeft: 18, marginBottom: 0 },
   hero: {
     width: '100%',
     paddingTop: 32,
@@ -84,6 +90,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginBottom: 0,
     paddingHorizontal: 24,
+    alignSelf: 'stretch',
   },
   heroTitle: {
     fontSize: 32,
@@ -160,14 +167,36 @@ const styles = StyleSheet.create({
     backgroundColor: '#E0E0E0',
     marginHorizontal: 4,
   },
+  centerContent: {
+    width: '100%',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 0,
+  },
   priceText: {
     fontSize: 16,
     color: '#888',
     marginTop: 24,
     marginBottom: 0,
     textAlign: 'center',
+    width: '100%',
   },
-  joinBtn: { backgroundColor: '#222', borderRadius: 14, paddingVertical: 16, paddingHorizontal: 32, alignItems: 'center', marginBottom: 12, marginTop: 18, shadowColor: '#EA4949', shadowOpacity: 0.12, shadowRadius: 6, shadowOffset: { width: 0, height: 2 }, elevation: 2 },
+  joinBtn: {
+    backgroundColor: '#222',
+    borderRadius: 14,
+    paddingVertical: 16,
+    paddingHorizontal: 32,
+    alignItems: 'center',
+    marginBottom: 12,
+    marginTop: 18,
+    shadowColor: '#EA4949',
+    shadowOpacity: 0.12,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 2,
+    width: '80%',
+    alignSelf: 'center',
+  },
   joinBtnText: { color: '#fff', fontSize: 18, fontWeight: 'bold', letterSpacing: 0.5 },
-  restoreText: { color: '#888', fontSize: 16, textAlign: 'center', marginBottom: 12 },
+  restoreText: { color: '#888', fontSize: 16, textAlign: 'center', marginBottom: 12, width: '100%' },
 });

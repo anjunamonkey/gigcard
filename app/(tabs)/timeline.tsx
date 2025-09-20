@@ -107,6 +107,13 @@ export default function TimelineScreen() {
           ))
         )}
       </ScrollView>
+      {/* Floating Action Button */}
+      <TouchableOpacity 
+        style={styles.fab} 
+        onPress={() => require('expo-router').useRouter().push('/add-event')}
+      >
+        <Text style={styles.fabText}>+</Text>
+      </TouchableOpacity>
     </View>
   );
 }
@@ -220,4 +227,32 @@ const styles = StyleSheet.create({
   gigArtist: { fontSize: 16, fontWeight: 'bold', color: '#0B1533' },
   gigDate: { fontSize: 14, color: '#666', marginTop: 4 },
   gigCity: { fontSize: 14, color: '#666' },
+  fab: {
+    position: 'absolute',
+    bottom: 32,
+    right: 24,
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: '#EA4949',
+    justifyContent: 'center',
+    alignItems: 'center',
+    elevation: 8,
+    shadowColor: '#EA4949',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    display: 'flex',
+  },
+  fabText: {
+    color: '#fff',
+    fontSize: 32,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    textAlignVertical: 'center',
+    lineHeight: 36,
+    includeFontPadding: false,
+    padding: 0,
+    margin: 0,
+  },
 });

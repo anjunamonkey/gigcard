@@ -29,22 +29,15 @@ export default function SearchGigCardsScreen() {
           onChangeText={setSearch}
           placeholderTextColor="#888"
         />
-      </View>
-      <View style={styles.spacerSmall} />
-      <View style={styles.toggleRow}>
         <TouchableOpacity
-          style={[styles.toggleBtn, !showFavourites && styles.toggleBtnActive]}
-          onPress={() => setShowFavourites(false)}
+          style={styles.heartFilterBtn}
+          onPress={() => setShowFavourites(!showFavourites)}
         >
-          <Ionicons name="search-outline" size={18} color={!showFavourites ? '#011030' : '#888'} style={{ marginRight: 6 }} />
-          <Text style={[styles.toggleText, !showFavourites && styles.toggleTextActive]}>All</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.toggleBtn, showFavourites && styles.toggleBtnActive]}
-          onPress={() => setShowFavourites(true)}
-        >
-          <Ionicons name="heart-outline" size={18} color={showFavourites ? '#EA4949' : '#888'} style={{ marginRight: 6 }} />
-          <Text style={[styles.toggleText, showFavourites && styles.toggleTextActive]}>Favourites</Text>
+          <Ionicons
+            name={showFavourites ? "heart" : "heart-outline"}
+            size={22}
+            color={showFavourites ? "#EA4949" : "#888"}
+          />
         </TouchableOpacity>
       </View>
       <View style={styles.spacer} />
@@ -63,6 +56,16 @@ export default function SearchGigCardsScreen() {
             </TouchableOpacity>
           ))
         )}
+        {/* Invite to create GigCard tile */}
+        <TouchableOpacity style={styles.inviteTile} activeOpacity={0.85} onPress={() => {/* handle invite action */}}>
+          <View style={styles.inviteTileContent}>
+            <Ionicons name="person-add-outline" size={28} color="#EA4949" style={{ marginRight: 14 }} />
+            <View style={{ flex: 1 }}>
+              <Text style={styles.inviteTileTitle}>Invite a Friend</Text>
+              <Text style={styles.inviteTileDesc}>Invite someone to create their own GigCard and join the community.</Text>
+            </View>
+          </View>
+        </TouchableOpacity>
       </ScrollView>
     </View>
   );
@@ -70,7 +73,7 @@ export default function SearchGigCardsScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F7F8FA', padding: 18 },
-  title: { fontSize: 26, fontWeight: 'bold', color: '#011030', marginTop: 12 },
+  title: { fontSize: 28, fontWeight: 'bold', color: '#0B1533', marginTop: 12, marginBottom: 8 },
   spacer: { height: 18 },
   spacerSmall: { height: 8 },
   toggleRow: {
@@ -132,4 +135,32 @@ const styles = StyleSheet.create({
   resultName: { fontSize: 17, fontWeight: 'bold', color: '#011030' },
   resultUsername: { fontSize: 15, color: '#EA4949', marginTop: 2 },
   resultLocation: { fontSize: 14, color: '#888', marginTop: 2 },
+  inviteTile: {
+    backgroundColor: '#F7F8FA',
+    borderRadius: 14,
+    padding: 16,
+    marginBottom: 24,
+    marginTop: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: '#EA4949',
+  },
+  inviteTileContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  inviteTileTitle: {
+    fontSize: 17,
+    fontWeight: 'bold',
+    color: '#EA4949',
+    marginBottom: 2,
+  },
+  inviteTileDesc: {
+    fontSize: 14,
+    color: '#011030',
+    opacity: 0.7,
+    flexWrap: 'wrap',
+  },
 });

@@ -93,11 +93,11 @@ export default function HomeScreen() {
         {/* Header bar with background */}
         <View style={styles.headerBar}>
           <View style={styles.header}>
-            <Image
-              source={require('../../assets/images/logo-alt.png')}
+            {/* <Image
+              source={require('../assets/images/logo-alt.png')}
               style={styles.logoImg}
               resizeMode="contain"
-            />
+            /> */}
           </View>
         </View>
         {/* Profile bar */}
@@ -125,7 +125,7 @@ export default function HomeScreen() {
               <TouchableOpacity style={styles.profileQR} onPress={() => router.push('/gigcard-qr')}>
                 <Ionicons name="qr-code-outline" size={28} color="#011030" />
               </TouchableOpacity>
-              {/* Gear icon replaces search icon */}
+              {/* Settings icon */}
               <TouchableOpacity style={styles.profileSettings} onPress={() => router.push('/profile')}>
                 <Ionicons name="settings-outline" size={28} color="#011030" />
               </TouchableOpacity>
@@ -147,20 +147,18 @@ export default function HomeScreen() {
         </TouchableOpacity>
         <View style={styles.spacer} />
         {/* Motivational quote/fun fact */}
-        {/* <View style={[styles.card, styles.quoteCard]}>
+        <View style={[styles.card, styles.quoteCard]}>
           <Text style={styles.quoteText}>
             "Live music is the cure for the common day."
           </Text>
-        </View> */}
+        </View>
         <View style={styles.spacer} />
         {/* Block color section */}
         <View style={[styles.card, styles.blockSection]}>
           <View style={styles.blockAccentBar} />
-          <TouchableOpacity onPress={() => router.push('/add-event')} activeOpacity={0.7}>
-            <Text style={styles.blockSectionText}>
-              Welcome back, Oliver! Ready to log your next gig or memory?
-            </Text>
-          </TouchableOpacity>
+          <Text style={styles.blockSectionText}>
+            Welcome back, Oliver! Ready to log your next gig or memory?
+          </Text>
         </View>
         <View style={styles.spacer} />
         {/* Section heading for stats */}
@@ -220,14 +218,12 @@ export default function HomeScreen() {
         <View style={styles.spacerSmall} />
         {/* Next Badge Progress bar */}
         <View style={[styles.card, styles.progressBarWrap]}>
+          <Text style={styles.progressLabel}>Next Badge Progress</Text>
           <View style={styles.progressBarBg}>
             <Animated.View style={[styles.progressBarFill, { width: progressAnim.interpolate({
               inputRange: [0, 1],
               outputRange: ['0%', '100%'],
             }) }]} />
-            <View style={styles.progressBarTextWrap}>
-              <Text style={styles.progressBarText}>Next Badge Progress</Text>
-            </View>
           </View>
         </View>
         <View style={styles.spacer} />
@@ -237,25 +233,25 @@ export default function HomeScreen() {
         {/* Section heading for achievements */}
         <View style={styles.sectionHeadingRow}>
           <View style={styles.sectionAccentBar} />
-          <Text style={styles.sectionHeading}>Connect with Friends</Text>
+          <Text style={styles.sectionHeading}>Achievements</Text>
         </View>
         <View style={styles.spacerSmall} />
-        {/* Social tile replaces achievements tile */}
+        {/* Achievements tile */}
         <TouchableOpacity 
-          style={[styles.card, styles.socialTile]} 
+          style={[styles.card, styles.achievementsTile]} 
           onPress={() => router.push('/search-gigcards')}
           activeOpacity={0.85}
         >
-          <View style={styles.socialTileContent}>
-            <View style={styles.socialTileIconWrap}>
-              <View style={styles.socialTileIconCircle}>
-                <Ionicons name="people-outline" size={28} color="#0B1533" />
+          <View style={styles.achievementsTileContent}>
+            <View style={styles.achievementsTileIconWrap}>
+              <View style={styles.achievementsTileIconCircle}>
+                <Ionicons name="ribbon" size={28} color="#0B1533" />
               </View>
             </View>
-            <View style={styles.socialTileTextWrap}>
-              <Text style={styles.socialTileTitle}>Connect with Friends</Text>
-              <Text style={styles.socialTileDesc}>
-                Find friends and explore their GigCards. Save favourites and see what gigs they've attended.
+            <View style={styles.achievementsTileTextWrap}>
+              <Text style={styles.achievementsTileTitle}>Achievements</Text>
+              <Text style={styles.achievementsTileDesc}>
+                You can earn achievements by completing certain activities in the app.
               </Text>
             </View>
           </View>
@@ -300,7 +296,7 @@ export default function HomeScreen() {
 
         <View style={styles.spacerSmall} />
         {/* Achievements tile */}
-        {/* <TouchableOpacity 
+        <TouchableOpacity 
           style={[styles.card, styles.achievementsTile]} 
           onPress={() => router.push('/search-gigcards')}
           activeOpacity={0.85}
@@ -308,17 +304,21 @@ export default function HomeScreen() {
           <View style={styles.achievementsTileContent}>
             <View style={styles.achievementsTileIconWrap}>
               <View style={styles.achievementsTileIconCircle}>
-                <Ionicons name="ribbon" size={28} color="#0B1533" />
+                {/* <Image
+                  source={require('../../assets/images/logo-icon.png')}
+                  style={{ width: 28, height: 28 }}
+                  resizeMode="contain"
+                /> */}
               </View>
             </View>
             <View style={styles.achievementsTileTextWrap}>
-              <Text style={styles.achievementsTileTitle}>Achievements</Text>
+              <Text style={styles.achievementsTileTitle}>View Other GigCards</Text>
               <Text style={styles.achievementsTileDesc}>
-                You can earn achievements by completing certain activities in the app.
+                Connect with friends and explore their GigCards. Choose to save favourites and see what gigs they've attended.
               </Text>
             </View>
           </View>
-          </TouchableOpacity> */}
+          </TouchableOpacity>
 
 
         <View style={styles.spacerSmall} />
@@ -569,40 +569,23 @@ const styles = StyleSheet.create({
     shadowOpacity: 0,
     elevation: 0,
   },
+  progressLabel: {
+    color: '#011030',
+    fontSize: 13,
+    fontWeight: '500',
+    marginBottom: 6,
+  },
   progressBarBg: {
     width: '100%',
-    height: 28,
+    height: 10,
     backgroundColor: '#E3F2FD',
     borderRadius: 5,
     overflow: 'hidden',
-    justifyContent: 'center',
   },
   progressBarFill: {
-    position: 'absolute',
-    left: 0,
-    top: 0,
-    height: 28,
+    height: 10,
     backgroundColor: '#EA4949',
     borderRadius: 5,
-    zIndex: 1,
-  },
-  progressBarTextWrap: {
-    position: 'absolute',
-    left: 0,
-    top: 0,
-    width: '100%',
-    height: 28,
-    justifyContent: 'center',
-    alignItems: 'center',
-    zIndex: 2,
-  },
-  progressBarText: {
-    color: '#011030',
-    fontSize: 12, // smaller font
-    fontWeight: '400', // normal weight
-    textAlign: 'center',
-    backgroundColor: 'transparent',
-    opacity: 0.6, // more subtle
   },
   // Achievements tile
   achievementsTile: {
@@ -649,56 +632,6 @@ const styles = StyleSheet.create({
     marginBottom: 2,
   },
   achievementsTileDesc: {
-    color: '#fff',
-    fontSize: 15,
-    opacity: 0.8,
-    flexWrap: 'wrap',
-  },
-  // Social tile
-  socialTile: {
-    backgroundColor: '#011030',
-    borderRadius: 16,
-    marginHorizontal: 16,
-    paddingVertical: 16,
-    paddingHorizontal: 14,
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderWidth: 0,
-    elevation: 0,
-    marginBottom: 0,
-  },
-  socialTileContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
-  },
-  socialTileIconWrap: {
-    marginRight: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  socialTileIconCircle: {
-    backgroundColor: '#fff',
-    borderRadius: 24,
-    width: 48,
-    height: 48,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: '#B3E0FF',
-  },
-  socialTileTextWrap: {
-    flex: 1,
-    flexDirection: 'column',
-    justifyContent: 'center',
-  },
-  socialTileTitle: {
-    color: '#fff',
-    fontSize: 17,
-    fontWeight: 'bold',
-    marginBottom: 2,
-  },
-  socialTileDesc: {
     color: '#fff',
     fontSize: 15,
     opacity: 0.8,
@@ -751,8 +684,8 @@ const styles = StyleSheet.create({
     backgroundColor: '#011030',
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: '#EA4949',
+    borderWidth: 2,
+    borderColor: '#B3E0FF',
   },
   profilePicInitial: {
     color: '#fff',

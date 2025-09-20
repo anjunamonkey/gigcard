@@ -9,7 +9,8 @@ export default function GigcardQRScreen() {
   const gigcardId = 'user-12345';
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Your GigCard QR Code</Text>
+      <Text style={styles.title}>GigCard QR</Text>
+      <Text style={styles.subtitleHeader}>Your GigCard QR Code</Text>
       <View style={styles.qrWrap}>
         {/* Example placeholder icon, replace with QRCode component for real QR */}
         <Ionicons name="qr-code-outline" size={120} color="#EA4949" />
@@ -24,15 +25,24 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#fff',
-    alignItems: 'center',
+    alignItems: 'center', // center children horizontally
     justifyContent: 'center',
-    padding: 24,
+    padding: 0, // remove padding
   },
   title: {
-    fontSize: 24,
+    fontSize: 28,
+    fontWeight: 'bold',
+    color: '#0B1533',
+    marginTop: 18,
+    marginBottom: 8,
+    textAlign: 'center', // center text
+  },
+  subtitleHeader: {
+    fontSize: 20,
     fontWeight: 'bold',
     color: '#011030',
     marginBottom: 24,
+    textAlign: 'center', // center text
   },
   qrWrap: {
     backgroundColor: '#F7F7F7',
@@ -41,11 +51,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 18,
+    alignSelf: 'center', // center QR code
   },
   subtitle: {
     fontSize: 16,
     color: '#888',
     marginTop: 12,
-    textAlign: 'center',
+    textAlign: 'center', // already centered
   },
 });

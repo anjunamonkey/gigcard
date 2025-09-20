@@ -1,5 +1,7 @@
+import { useRouter } from 'expo-router';
 import React from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import PageTitle from '../../components/PageTitle';
 
 const memories = [
   { caption: 'Above & Beyond, 2021' },
@@ -8,9 +10,16 @@ const memories = [
 ];
 
 export default function MemoriesScreen() {
+  const router = useRouter();
+
+  const handleMemoryPress = (caption: string) => {
+    const slug = caption.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+    router.push(`/gig-detail/${slug}`);
+  };
+
   return (
-    <ScrollView style={styles.container}>
-      <Text style={styles.title}>Memories</Text>
+    <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 80 }}>
+      <PageTitle style={styles.title}>Memories</PageTitle>
       <View style={styles.carousel}>
         <View style={styles.carouselMain}>
           <Text style={styles.carouselText}>Swipe to browse memories</Text>
@@ -33,7 +42,11 @@ export default function MemoriesScreen() {
       </View>
       <Text style={styles.sectionTitle}>All Memories</Text>
       {memories.map((memory, idx) => (
-        <TouchableOpacity key={idx} style={styles.memoryListItem}>
+        <TouchableOpacity
+          key={idx}
+          style={styles.memoryListItem}
+          onPress={() => handleMemoryPress(memory.caption)}
+        >
           <View style={styles.memoryListImage} />
           <Text style={styles.memoryListCaption}>{memory.caption}</Text>
         </TouchableOpacity>
@@ -43,8 +56,16 @@ export default function MemoriesScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#fff', padding: 16 },
-  title: { fontSize: 24, fontWeight: 'bold', color: '#0B1533', marginBottom: 20 },
+  container: { flex: 1, backgroundColor: '#fff', padding: 0, paddingHorizontal: 18 },
+  title: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    color: '#0B1533',
+    marginBottom: 0,
+    textAlign: 'left',
+    letterSpacing: -0.5,
+    marginTop: 18,
+  },
   carousel: { 
     backgroundColor: '#f9f9f9', 
     borderRadius: 12, 

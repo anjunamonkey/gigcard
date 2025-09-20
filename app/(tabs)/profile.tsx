@@ -1,6 +1,7 @@
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
-import { Alert, StyleSheet, Switch, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Alert, ScrollView, StyleSheet, Switch, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import PageTitle from '../../components/PageTitle';
 
 export default function ProfileScreen() {
   const router = useRouter();
@@ -16,6 +17,8 @@ export default function ProfileScreen() {
 
   // Country translation toggle
   const [translateCountries, setTranslateCountries] = useState(false);
+
+  const [editingProfile, setEditingProfile] = useState(false);
 
   const handleLogout = () => {
     // TODO: Clear auth state
@@ -42,44 +45,85 @@ export default function ProfileScreen() {
     Alert.alert('Contact Support', 'Support contact options go here.');
   };
 
+  const handlePrivacyPolicy = () => {
+    // TODO: Open privacy policy link or screen
+    Alert.alert('Privacy Policy', 'Privacy Policy link or screen goes here.');
+  };
+
+  const handleAboutApp = () => {
+    // TODO: Show about the app info
+    Alert.alert('About the App', 'About the App info goes here.');
+  };
+
+  const handleFAQ = () => {
+    Alert.alert('FAQ', 'FAQ screen or link goes here.');
+  };
+  const handleWhatsNew = () => {
+    Alert.alert("What's New", "What's new info goes here.");
+  };
+
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Profile</Text>
-      <View style={styles.profileCard}>
-        {/* Profile picture */}
-        <TouchableOpacity style={styles.profilePicWrap} onPress={handleChangePhoto}>
-          <View style={styles.profilePicCircle}>
-            {/* Placeholder image or initial */}
-            {profilePhoto ? (
-              // TODO: Render Image component with profilePhoto URI
-              <Text style={styles.profilePicInitial}>IMG</Text>
-            ) : (
-              <Text style={styles.profilePicInitial}>{name.charAt(0).toUpperCase()}</Text>
-            )}
-          </View>
-          <Text style={styles.profilePicLink}>Change photo</Text>
-        </TouchableOpacity>
-        {/* Editable name */}
-        <TextInput
-          style={styles.profileNameInput}
-          value={name}
-          onChangeText={setName}
-          placeholder="Name"
-        />
-        {/* Editable email */}
-        <TextInput
-          style={styles.profileEmailInput}
-          value={email}
-          onChangeText={setEmail}
-          placeholder="Email"
-          keyboardType="email-address"
-        />
-        <Text style={styles.profileLocation}>London, United Kingdom</Text>
-        {/* Change password button */}
-        <TouchableOpacity style={styles.changePasswordBtn} onPress={handleChangePassword}>
-          <Text style={styles.changePasswordText}>Change Password</Text>
+    <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 80 }}>
+      <View style={styles.headerRow}>
+        <PageTitle>Profile</PageTitle>
+        <TouchableOpacity onPress={() => setEditingProfile(true)} style={styles.editProfileLink}>
+          <Text style={styles.editProfileText}>Edit Profile</Text>
         </TouchableOpacity>
       </View>
+      {editingProfile && (
+        <View style={styles.profileCard}>
+          {/* Profile picture */}
+          <TouchableOpacity style={styles.profilePicWrap} onPress={handleChangePhoto}>
+            <View style={styles.profilePicCircle}>
+              {profilePhoto ? (
+                <Text style={styles.profilePicInitial}>IMG</Text>
+              ) : (
+                <Text style={styles.profilePicInitial}>{name.charAt(0).toUpperCase()}</Text>
+              )}
+            </View>
+            <Text style={styles.profilePicLink}>Change photo</Text>
+          </TouchableOpacity>
+          {/* Editable name */}
+          <TextInput
+            style={styles.profileNameInput}
+            value={name}
+            onChangeText={setName}
+            placeholder="Name"
+          />
+          {/* Editable email */}
+          <TextInput
+            style={styles.profileEmailInput}
+            value={email}
+            onChangeText={setEmail}
+            placeholder="Email"
+            keyboardType="email-address"
+          />
+          <Text style={styles.profileLocation}>London, United Kingdom</Text>
+          {/* Change password button */}
+          <TouchableOpacity style={styles.changePasswordBtn} onPress={handleChangePassword}>
+            <Text style={styles.changePasswordText}>Change Password</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.saveProfileBtn} onPress={() => setEditingProfile(false)}>
+            <Text style={styles.saveProfileText}>Save</Text>
+          </TouchableOpacity>
+        </View>
+      )}
+      {!editingProfile && (
+        <View style={styles.profileCard}>
+          <View style={styles.profilePicWrap}>
+            <View style={styles.profilePicCircle}>
+              {profilePhoto ? (
+                <Text style={styles.profilePicInitial}>IMG</Text>
+              ) : (
+                <Text style={styles.profilePicInitial}>{name.charAt(0).toUpperCase()}</Text>
+              )}
+            </View>
+          </View>
+          <Text style={styles.profileName}>{name}</Text>
+          <Text style={styles.profileEmail}>{email}</Text>
+          <Text style={styles.profileLocation}>London, United Kingdom</Text>
+        </View>
+      )}
       <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout}>
         <Text style={styles.logoutText}>Logout</Text>
       </TouchableOpacity>
@@ -100,7 +144,7 @@ export default function ProfileScreen() {
             />
           </View>
           <View style={styles.settingsDivider} />
-          <View style={styles.settingsRow}>
+          {/* <View style={styles.settingsRow}>
             <View style={styles.settingsIconWrap}><Text style={styles.settingsIcon}>🔗</Text></View>
             <Text style={styles.settingsLabel}>Data Sharing</Text>
             <Switch
@@ -110,42 +154,14 @@ export default function ProfileScreen() {
               thumbColor="#fff"
               style={{ marginLeft: 12 }}
             />
-          </View>
+          </View> */}
         </View>
         <Text style={styles.settingsDesc}>
           Control who can see your profile and whether your data is shared for analytics.
         </Text>
       </View>
 
-      {/* Settings Section */}
-      <View style={styles.settingsSection}>
-        <Text style={styles.settingsHeading}>SETTINGS</Text>
-        <View style={styles.settingsCard}>
-          <View style={styles.settingsRow}>
-            <View style={styles.settingsIconWrap}><Text style={styles.settingsIcon}>⚙️</Text></View>
-            <Text style={styles.settingsLabel}>Open in Settings App</Text>
-          </View>
-          <View style={styles.settingsDivider} />
-          <View style={styles.settingsRow}>
-            <View style={styles.settingsIconWrap}><Text style={styles.settingsIcon}>⭐</Text></View>
-            <Text style={styles.settingsLabel}>Achievements</Text>
-            <View style={styles.settingsToggleOn} />
-          </View>
-          <View style={styles.settingsDivider} />
-          <View style={styles.settingsRow}>
-            <View style={styles.settingsIconWrap}><Text style={styles.settingsIcon}>🏳️</Text></View>
-            <Text style={styles.settingsLabel}>Translate Countries</Text>
-            <Switch
-              value={translateCountries}
-              onValueChange={setTranslateCountries}
-              trackColor={{ false: '#eee', true: '#011030' }}
-              thumbColor="#fff"
-              style={{ marginLeft: 12 }}
-            />
-          </View>
-        </View>
-        <Text style={styles.settingsDesc}>Enable to translate country names to preferred device language.</Text>
-      </View>
+   
 
       {/* Clear Cache / Reset Data */}
       <View style={styles.settingsSection}>
@@ -163,9 +179,19 @@ export default function ProfileScreen() {
       <View style={styles.settingsSection}>
         <Text style={styles.settingsHeading}>HELP & SUPPORT</Text>
         <View style={styles.settingsCard}>
+          <TouchableOpacity style={styles.settingsRow} onPress={handleFAQ}>
+            <View style={styles.settingsIconWrap}><Text style={styles.settingsIcon}>❓</Text></View>
+            <Text style={styles.settingsLabel}>FAQ</Text>
+          </TouchableOpacity>
+          <View style={styles.settingsDivider} />
           <TouchableOpacity style={styles.settingsRow} onPress={handleContactSupport}>
             <View style={styles.settingsIconWrap}><Text style={styles.settingsIcon}>💬</Text></View>
-            <Text style={styles.settingsLabel}>Contact Support</Text>
+            <Text style={styles.settingsLabel}>Get in Touch</Text>
+          </TouchableOpacity>
+          <View style={styles.settingsDivider} />
+          <TouchableOpacity style={styles.settingsRow} onPress={handleWhatsNew}>
+            <View style={styles.settingsIconWrap}><Text style={styles.settingsIcon}>🆕</Text></View>
+            <Text style={styles.settingsLabel}>What's New</Text>
           </TouchableOpacity>
         </View>
         <Text style={styles.settingsDesc}>Need help? Contact our support team for assistance.</Text>
@@ -180,22 +206,31 @@ export default function ProfileScreen() {
             <Text style={styles.settingsLabel}>App Version</Text>
             <Text style={styles.settingsVersion}>1.0.0</Text>
           </View>
+          <View style={styles.settingsDivider} />
+          <TouchableOpacity style={styles.settingsRow} onPress={handlePrivacyPolicy}>
+            <View style={styles.settingsIconWrap}><Text style={styles.settingsIcon}>🔒</Text></View>
+            <Text style={styles.settingsLabel}>Privacy Policy</Text>
+          </TouchableOpacity>
+          <View style={styles.settingsDivider} />
+          <TouchableOpacity style={styles.settingsRow} onPress={handleAboutApp}>
+            <View style={styles.settingsIconWrap}><Text style={styles.settingsIcon}>📱</Text></View>
+            <Text style={styles.settingsLabel}>About the App</Text>
+          </TouchableOpacity>
         </View>
         <Text style={styles.settingsDesc}>GigCard © 2024</Text>
       </View>
-    </View>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#fff', padding: 16 },
-  title: { fontSize: 24, fontWeight: 'bold', marginBottom: 16, color: '#0B1533' },
+  container: { flex: 1, backgroundColor: '#fff', padding: 0, paddingHorizontal: 18 },
   profileCard: { 
     backgroundColor: '#f5f5f5', 
     borderRadius: 12, 
     padding: 24, 
     alignItems: 'center', 
-    marginBottom: 24 
+    marginBottom: 24,
   },
   profilePicWrap: {
     alignItems: 'center',
@@ -313,5 +348,34 @@ const styles = StyleSheet.create({
     color: '#888',
     fontWeight: 'bold',
     marginLeft: 8,
+  },
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: 0,
+    marginBottom: 0,
+  },
+  editProfileLink: {
+    padding: 8,
+    marginRight: 2,
+  },
+  editProfileText: {
+    color: '#E94F4F',
+    fontWeight: 'bold',
+    fontSize: 15,
+  },
+  saveProfileBtn: {
+    marginTop: 12,
+    backgroundColor: '#0B1533',
+    borderRadius: 8,
+    padding: 10,
+    alignItems: 'center',
+    width: '100%',
+  },
+  saveProfileText: {
+    color: '#fff',
+    fontWeight: 'bold',
+    fontSize: 15,
   },
 });

@@ -13,17 +13,17 @@ const recent = [
   { name: 'Jan Blomqvist', genre: 'Dance, Electronica', image: require('../../assets/images/jan-blomqvist.jpg') },
   { name: 'Nish Kumar', genre: 'Comedian', image: require('../../assets/images/nish-kumar.jpg') },
 ];
-const allBands = [
+const allArtists = [
   { name: 'Above & Beyond', genre: 'Trance', date: 'Mar 05', timesSeen: 5, image: require('../../assets/images/above-beyond.jpg'), favourite: true },
   { name: 'Tinlicker', genre: 'Melodic House', date: 'Feb 12', timesSeen: 2, image: require('../../assets/images/tinlicker.jpg'), favourite: true },
   { name: 'Jan Blomqvist', genre: 'Dance, Electronica', date: 'Jan 20', timesSeen: 3, image: require('../../assets/images/jan-blomqvist.jpg'), favourite: false },
   { name: 'Nish Kumar', genre: 'Comedian', date: 'Dec 15', timesSeen: 1, image: require('../../assets/images/nish-kumar.jpg'), favourite: false },
 ];
 
-export default function BandsScreen() {
+export default function ArtistsScreen() {
   const [search, setSearch] = useState('');
   const [selectedGenre, setSelectedGenre] = useState('All');
-  const [showAllBands, setShowAllBands] = useState(false); // Add this state
+  const [showAllArtists, setShowAllArtists] = useState(false); // Add this state
   const [showDetailedView, setShowDetailedView] = useState(false);
   const [sortBy, setSortBy] = useState('lastSeen'); // 'name', 'lastSeen', 'timesSeen'
   const [sortOrder, setSortOrder] = useState('desc'); // 'asc', 'desc'
@@ -40,12 +40,12 @@ export default function BandsScreen() {
     }, [])
   );
 
-  const filteredBands = allBands.filter(band =>
-    (selectedGenre === 'All' || (band.genre && band.genre.toLowerCase().includes(selectedGenre.toLowerCase()))) &&
-    band.name.toLowerCase().includes(search.toLowerCase())
+  const filteredArtists = allArtists.filter(artist =>
+    (selectedGenre === 'All' || (artist.genre && artist.genre.toLowerCase().includes(selectedGenre.toLowerCase()))) &&
+    artist.name.toLowerCase().includes(search.toLowerCase())
   );
 
-  const sortedFilteredBands = [...filteredBands].sort((a, b) => {
+  const sortedFilteredArtists = [...filteredArtists].sort((a, b) => {
     let aVal: string | Date | number;
     let bVal: string | Date | number;
     if (sortBy === 'name') {
@@ -81,13 +81,13 @@ export default function BandsScreen() {
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 80 }}>
-      <Text style={styles.title}>Bands</Text>
+      <Text style={styles.title}>Artists</Text>
       <View style={styles.spacer} />
       <View style={[styles.card, styles.headerRow]}>
         <Ionicons name="search" size={22} color="#888" style={{ marginLeft: 4, marginRight: 8 }} />
         <TextInput
           style={styles.searchInput}
-          placeholder="Search bands"
+          placeholder="Search artists"
           value={search}
           onChangeText={setSearch}
           placeholderTextColor="#888"
@@ -120,7 +120,7 @@ export default function BandsScreen() {
         <>
           <View style={styles.sectionHeadingRow}>
             <View style={styles.sectionAccentBar} />
-            <Text style={styles.sectionTitle}>Your favourites</Text>
+            <Text style={styles.sectionTitle}>Your favourite artists</Text>
             <TouchableOpacity onPress={() => {
               setShowDetailedView(true);
               setShowFavouritesOnly(true);
@@ -129,19 +129,19 @@ export default function BandsScreen() {
           </View>
           <View style={styles.spacerSmall} />
           <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.favRow}>
-            {favourites.map((band, idx) => (
+            {favourites.map((artist, idx) => (
               <TouchableOpacity
                 key={idx}
                 style={[styles.card, styles.favCard]}
                 onPress={() => {
-                  const artistId = band.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+                  const artistId = artist.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
                   require('expo-router').useRouter().push(`/artist-detail/${artistId}`);
                 }}
               >
-                <Image source={band.image} style={styles.favImage} />
-                <Text style={styles.favName}>{band.name}</Text>
-                <Text style={styles.favGenre}>{band.genre}</Text>
-                <View style={styles.gigCountBadge}><Text style={styles.gigCountText}>{band.gigs} GIGS</Text></View>
+                <Image source={artist.image} style={styles.favImage} />
+                <Text style={styles.favName}>{artist.name}</Text>
+                <Text style={styles.favGenre}>{artist.genre}</Text>
+                <View style={styles.gigCountBadge}><Text style={styles.gigCountText}>{artist.gigs} GIGS</Text></View>
                 <TouchableOpacity style={styles.viewBtn}><Text style={styles.viewBtnText}>View</Text></TouchableOpacity>
               </TouchableOpacity>
             ))}
@@ -152,19 +152,19 @@ export default function BandsScreen() {
             <Text style={styles.sectionSubTitle}>Most recently seen</Text>
           </View>
           <View style={styles.spacerSmall} />
-          {recent.map((band, idx) => (
+          {recent.map((artist, idx) => (
             <TouchableOpacity
               key={idx}
               style={[styles.card, styles.recentCard]}
               onPress={() => {
-                const artistId = band.name.toLowerCase().replace(/\s+/g, '-');
+                const artistId = artist.name.toLowerCase().replace(/\s+/g, '-');
                 require('expo-router').useRouter().push(`/artist-detail/${artistId}`);
               }}
             >
-              <Image source={band.image} style={styles.recentImage} />
+              <Image source={artist.image} style={styles.recentImage} />
               <View style={styles.recentInfo}>
-                <Text style={styles.recentName}>{band.name}</Text>
-                <Text style={styles.recentGenre}>{band.genre}</Text>
+                <Text style={styles.recentName}>{artist.name}</Text>
+                <Text style={styles.recentGenre}>{artist.genre}</Text>
                 <Ionicons name="chevron-forward" size={22} color="#888" style={{ position: 'absolute', right: 0, top: 18 }} />
               </View>
             </TouchableOpacity>
@@ -174,24 +174,24 @@ export default function BandsScreen() {
       <View style={styles.spacer} />
       <View style={styles.sectionHeadingRow}>
         <View style={styles.sectionAccentBar} />
-        <Text style={styles.sectionTitle}>All bands</Text>
+        <Text style={styles.sectionTitle}>All artists</Text>
         <TouchableOpacity onPress={() => setShowDetailedView(!showDetailedView)}><Text style={styles.seeMore}>{showDetailedView ? 'See less' : 'See more'}</Text></TouchableOpacity>
       </View>
       <View style={styles.spacerSmall} />
       {!showDetailedView && (
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.allBandsRow}>
-          {filteredBands.map((band, idx) => (
+          {filteredArtists.map((artist, idx) => (
             <TouchableOpacity
               key={idx}
               style={[styles.card, styles.allBandCard]}
               onPress={() => {
-                const artistId = band.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+                const artistId = artist.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
                 require('expo-router').useRouter().push(`/artist-detail/${artistId}`);
               }}
             >
-              <Image source={band.image} style={styles.allBandImage} />
-              <View style={styles.allBandDateBadge}><Text style={styles.allBandDateText}>{band.date.toUpperCase()}</Text></View>
-              <Text style={styles.allBandName}>{band.name}</Text>
+              <Image source={artist.image} style={styles.allBandImage} />
+              <View style={styles.allBandDateBadge}><Text style={styles.allBandDateText}>{artist.date.toUpperCase()}</Text></View>
+              <Text style={styles.allBandName}>{artist.name}</Text>
             </TouchableOpacity>
           ))}
         </ScrollView>
@@ -209,7 +209,7 @@ export default function BandsScreen() {
             </TouchableOpacity>
           </View>
           <BandsList
-            bands={showFavouritesOnly ? sortedFilteredBands.filter(b => b.favourite) : sortedFilteredBands}
+            bands={showFavouritesOnly ? sortedFilteredArtists.filter(a => a.favourite) : sortedFilteredArtists}
             onBandPress={item => {
               const artistId = item.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
               require('expo-router').useRouter().push(`/artist-detail/${artistId}`);

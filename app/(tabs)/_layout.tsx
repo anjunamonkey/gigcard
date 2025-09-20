@@ -55,9 +55,9 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="bands"
+        name="artists"
         options={{
-          title: 'Bands',
+          title: 'Artists',
           tabBarIcon: ({ color }) => <IconSymbol size={20} name="music.note" color={color} />,
         }}
       />
@@ -69,6 +69,13 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
+        name="memories"
+        options={{
+          title: 'Memories',
+          tabBarIcon: ({ color }) => <IconSymbol size={20} name="photo.fill" color={color} />,
+        }}
+      />
+    <Tabs.Screen
         name="profile"
         options={{
           title: 'Profile',
