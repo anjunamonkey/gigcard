@@ -4,26 +4,25 @@ import { Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'rea
 import PageTitle from '../../components/PageTitle';
 
 const memories = [
-  { caption: 'Above & Beyond, 2021', image: require('../../assets/images/above-beyond.jpg') },
-  { caption: 'Tinlicker, 2022', image: require('../../assets/images/tinlicker.jpg') },
-  { caption: 'Armin Van Buuren, A State of Trance, 2023', image: require('../../assets/images/jan-blomqvist.jpg') },
+  { caption: 'Above & Beyond, 2021', image: require('../../assets/images/above-beyond.jpg'), gigId: 'above-&-beyond-november-2024' },
+  { caption: 'Tinlicker, 2022', image: require('../../assets/images/tinlicker.jpg'), gigId: 'jan-blomqvist-november-2023' },
+  { caption: 'Armin Van Buuren, A State of Trance, 2023', image: require('../../assets/images/jan-blomqvist.jpg'), gigId: 'elderbrook-october-2023' },
 ];
 
 export default function MemoriesScreen() {
   const router = useRouter();
 
-  const handleMemoryPress = (caption: string) => {
-    const slug = caption.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
-    router.push(`/gig-detail/${slug}`);
+  const handleMemoryPress = (gigId: string) => {
+    router.push(`/gig-detail/${gigId}`);
   };
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 80 }}>
       <PageTitle style={styles.title}>Memories</PageTitle>
       <View style={styles.carousel}>
-        <View style={styles.carouselMain}>
+        <TouchableOpacity style={styles.carouselMain} onPress={() => handleMemoryPress(memories[0].gigId)}>
           <Text style={styles.carouselText}>Swipe to browse memories</Text>
-        </View>
+        </TouchableOpacity>
         {/* Placeholder for carousel dots */}
         <View style={styles.carouselDotRow}>
           {memories.map((_, idx) => (
@@ -34,10 +33,10 @@ export default function MemoriesScreen() {
       <Text style={styles.sectionTitle}>Recent</Text>
       <View style={styles.memoriesRow}>
         {memories.slice(0, 2).map((m, idx) => (
-          <View key={idx} style={styles.memoryCard}>
+          <TouchableOpacity key={idx} style={styles.memoryCard} onPress={() => handleMemoryPress(m.gigId)}>
             <Image source={m.image} style={styles.memoryImage} />
             <Text style={styles.memoryCaption}>{m.caption}</Text>
-          </View>
+          </TouchableOpacity>
         ))}
       </View>
       <Text style={styles.sectionTitle}>All Memories</Text>
@@ -45,7 +44,7 @@ export default function MemoriesScreen() {
         <TouchableOpacity
           key={idx}
           style={styles.memoryListItem}
-          onPress={() => handleMemoryPress(memory.caption)}
+          onPress={() => handleMemoryPress(memory.gigId)}
         >
           <Image source={memory.image} style={styles.memoryListImage} />
           <Text style={styles.memoryListCaption}>{memory.caption}</Text>

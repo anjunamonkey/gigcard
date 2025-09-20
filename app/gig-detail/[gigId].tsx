@@ -1,13 +1,19 @@
+import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React from 'react';
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+
+type Memory = {
+  image: any;
+  description?: string;
+};
 
 type GigDetail = {
   artist: string;
   venue: string;
   date: string;
   bio: string;
-  memories: string[];
+  memories: Memory[];
 };
 
 const GIGS: Record<string, GigDetail> = {
@@ -16,28 +22,42 @@ const GIGS: Record<string, GigDetail> = {
     venue: 'London',
     date: 'November 2024',
     bio: 'Above & Beyond are an electronic music group consisting of English musicians/DJs Jono Grant, Tony McGuinness and Finnish musician/DJ Paavo Siljamäki. Formed in 2000, they are the owners of London-based electronic dance music labels Anjunabeats, Anjunadeep and Anjunachill, and also host a weekly radio show titled Group Therapy Radio.',
-    memories: ["#191919", "#888888", "#cccccc", "#ededed"]
+    memories: [
+      { image: require('../../assets/images/above-beyond.jpg'), description: 'Amazing light show!' },
+      { image: require('../../assets/images/tinlicker.jpg'), description: 'Met new friends.' },
+      { image: require('../../assets/images/jan-blomqvist.jpg') },
+      { image: require('../../assets/images/nish-kumar.jpg'), description: 'Afterparty at the venue.' }
+    ]
   },
   'jan-blomqvist-november-2023': {
     artist: 'Jan Blomqvist',
     venue: 'London',
     date: 'November 2023',
     bio: 'Jan Blomqvist is a German vocalist, guitarist and producer. He is known for his melodic, emotional electronic music and live performances.',
-    memories: ["#222", "#aaa", "#ccc", "#eee"]
+    memories: [
+      { image: require('../../assets/images/jan-blomqvist.jpg'), description: 'Front row experience.' },
+      { image: require('../../assets/images/above-beyond.jpg') }
+    ]
   },
   'elderbrook-october-2023': {
     artist: 'Elderbrook',
     venue: 'London',
     date: 'October 2023',
     bio: 'Elderbrook is a British musician, songwriter and producer. He is known for blending elements of electronic, dance and pop music.',
-    memories: ["#333", "#bbb", "#ddd", "#fff"]
+    memories: [
+      { image: require('../../assets/images/nish-kumar.jpg'), description: 'Great crowd energy.' },
+      { image: require('../../assets/images/tinlicker.jpg') }
+    ]
   },
   'o2-arena-2016': {
     artist: 'Above & Beyond',
     venue: 'O2 Arena, London',
     date: '22 Jan, 2016',
     bio: 'Above & Beyond are an electronic music group consisting of English musicians/DJs Jono Grant, Tony McGuinness and Finnish musician/DJ Paavo Siljamäki. Formed in 2000, they are the owners of London-based electronic dance music labels Anjunabeats, Anjunadeep and Anjunachill, and also host a weekly radio show titled Group Therapy Radio.',
-    memories: ["#191919", "#888888", "#cccccc", "#ededed"]
+    memories: [
+      { image: require('../../assets/images/above-beyond.jpg'), description: 'Unforgettable night.' },
+      { image: require('../../assets/images/jan-blomqvist.jpg') }
+    ]
   }
 };
 
@@ -45,6 +65,11 @@ export default function GigDetailScreen() {
   const { gigId } = useLocalSearchParams();
   const router = useRouter();
   const gig = GIGS[(gigId as string) || 'o2-arena-2016'];
+  const rating = 4; // Example static rating, replace with dynamic if needed
+
+  const handleViewMoreGigs = () => {
+    router.push(`/timeline?artist=${encodeURIComponent(gig.artist)}`);
+  };
 
   return (
     <ScrollView style={styles.container}>
@@ -55,14 +80,41 @@ export default function GigDetailScreen() {
         <TouchableOpacity style={styles.dateChip}>
           <Text style={styles.dateChipText}>{gig.date}</Text>
         </TouchableOpacity>
+        <View style={styles.ratingRow}>
+          {[...Array(5)].map((_, i) => (
+            <Ionicons
+              key={i}
+              name={i < rating ? 'star' : 'star-outline'}
+              size={22}
+              color={i < rating ? '#011030' : '#EA4949'}
+              style={{ marginRight: 2 }}
+            />
+          ))}
+        </View>
         <Text style={styles.bio}>{gig.bio}</Text>
-        <TouchableOpacity style={styles.allGigsBtn}>
-          <Text style={styles.allGigsBtnText}>All Gigs you’ve attended</Text>
+        <TouchableOpacity style={styles.allGigsBtn} onPress={handleViewMoreGigs}>
+          <Text style={styles.allGigsBtnText}>View 3 more gigs</Text>
         </TouchableOpacity>
+        {/* Notes section */}
+        <Text style={styles.sectionTitle}>Notes</Text>
+        <View style={styles.notesBox}>
+          <Text style={styles.notesText}>
+            {/* TODO: Replace with dynamic notes if available */}
+            No notes added yet.
+          </Text>
+        </View>
+        {/* Memories section */}
         <Text style={styles.sectionTitle}>Memories</Text>
-        <View style={styles.memoriesRow}>
-          {gig.memories.map((color: string, i: number) => (
-            <View key={i} style={[styles.memoryDot, { backgroundColor: color }]} />
+        <View style={styles.memoriesGrid}>
+          {gig.memories.map((memory, i) => (
+            <View key={i} style={styles.memoryItem}>
+              <View style={styles.memoryImageWrap}>
+                <Image source={memory.image} style={styles.memoryImage} />
+              </View>
+              {memory.description ? (
+                <Text style={styles.memoryDesc}>{memory.description}</Text>
+              ) : null}
+            </View>
           ))}
         </View>
       </View>
@@ -82,6 +134,44 @@ const styles = StyleSheet.create({
   allGigsBtn: { borderColor: '#E94F4F', borderWidth: 1.5, borderRadius: 8, padding: 16, alignItems: 'center', marginBottom: 16 },
   allGigsBtnText: { color: '#E94F4F', fontWeight: 'bold', fontSize: 16 },
   sectionTitle: { fontWeight: 'bold', color: '#0B1533', marginTop: 16, marginBottom: 8 },
-  memoriesRow: { flexDirection: 'row', marginTop: 8 },
-  memoryDot: { width: 28, height: 28, borderRadius: 14, marginRight: 10, borderWidth: 2, borderColor: '#fff', elevation: 2 },
+  notesBox: {
+    backgroundColor: '#f9f9f9',
+    borderRadius: 10,
+    padding: 14,
+    marginBottom: 8,
+  },
+  notesText: {
+    color: '#888',
+    fontSize: 15,
+  },
+  memoriesGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+    marginTop: 8,
+  },
+  memoryItem: {
+    width: '48%',
+    marginBottom: 16,
+  },
+  memoryImageWrap: {
+    width: '100%',
+    aspectRatio: 1,
+    borderRadius: 10,
+    overflow: 'hidden',
+    backgroundColor: '#eee',
+    marginBottom: 6,
+  },
+  memoryImage: {
+    width: '100%',
+    height: '100%',
+    resizeMode: 'cover',
+  },
+  memoryDesc: {
+    fontSize: 13,
+    color: '#666',
+    textAlign: 'center',
+    marginTop: 2,
+  },
+  ratingRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 12, marginTop: -4 },
 });

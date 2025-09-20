@@ -29,6 +29,11 @@ const carouselFeatures = [
     image: placeholderImage,
     description: 'Attach and save videos to your gig memories.',
   },
+  {
+    title: 'Auto Discovery from Device Camera Roll',
+    image: placeholderImage,
+    description: 'Automatically discover and suggest gig photos from your camera roll.',
+  },
 ];
 
 
