@@ -1,12 +1,12 @@
 import { useRouter } from 'expo-router';
 import React from 'react';
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import PageTitle from '../../components/PageTitle';
 
 const memories = [
-  { caption: 'Above & Beyond, 2021' },
-  { caption: 'Tinlicker, 2022' },
-  { caption: 'Armin Van Buuren, A State of Trance, 2023' },
+  { caption: 'Above & Beyond, 2021', image: require('../../assets/images/above-beyond.jpg') },
+  { caption: 'Tinlicker, 2022', image: require('../../assets/images/tinlicker.jpg') },
+  { caption: 'Armin Van Buuren, A State of Trance, 2023', image: require('../../assets/images/jan-blomqvist.jpg') },
 ];
 
 export default function MemoriesScreen() {
@@ -35,7 +35,7 @@ export default function MemoriesScreen() {
       <View style={styles.memoriesRow}>
         {memories.slice(0, 2).map((m, idx) => (
           <View key={idx} style={styles.memoryCard}>
-            <View style={styles.memoryImage} />
+            <Image source={m.image} style={styles.memoryImage} />
             <Text style={styles.memoryCaption}>{m.caption}</Text>
           </View>
         ))}
@@ -47,7 +47,7 @@ export default function MemoriesScreen() {
           style={styles.memoryListItem}
           onPress={() => handleMemoryPress(memory.caption)}
         >
-          <View style={styles.memoryListImage} />
+          <Image source={memory.image} style={styles.memoryListImage} />
           <Text style={styles.memoryListCaption}>{memory.caption}</Text>
         </TouchableOpacity>
       ))}
