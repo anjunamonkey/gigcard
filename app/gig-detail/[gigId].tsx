@@ -414,6 +414,29 @@ const GigDetail = () => {
             {userGig.review || 'No notes added yet.'}
           </Text>
         </View>
+        {/* Memories section */}
+        {userGig.memories && userGig.memories.length > 0 && (
+          <>
+            <Text style={styles.sectionTitle}>Memories</Text>
+            <View style={{ flexDirection: 'row', marginTop: 8 }}>
+              {userGig.memories.map((memory: any, idx: number) => (
+                <View
+                  key={idx}
+                  style={{
+                    width: 28,
+                    height: 28,
+                    borderRadius: 14,
+                    marginRight: 10,
+                    borderWidth: 2,
+                    borderColor: '#fff',
+                    elevation: 2,
+                    backgroundColor: memory.color || '#eee',
+                  }}
+                />
+              ))}
+            </View>
+          </>
+        )}
       </View>
     </ScrollView>
   );

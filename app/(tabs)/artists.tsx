@@ -1,24 +1,9 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { Image, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import BandsList from '../../components/BandsList';
-
-const genres = ['All', 'Dance', 'Pop', 'Rock', 'Ambient', 'Metal'];
-const favourites = [
-  { name: 'Above & Beyond', genre: 'Trance', gigs: 5, image: require('../../assets/images/above-beyond.jpg') },
-  { name: 'Tinlicker', genre: 'Melodic House', gigs: 2, image: require('../../assets/images/tinlicker.jpg') },
-];
-const recent = [
-  { name: 'Jan Blomqvist', genre: 'Dance, Electronica', image: require('../../assets/images/jan-blomqvist.jpg') },
-  { name: 'Nish Kumar', genre: 'Comedian', image: require('../../assets/images/nish-kumar.jpg') },
-];
-const allArtists = [
-  { name: 'Above & Beyond', genre: 'Trance', date: 'Mar 05', timesSeen: 5, image: require('../../assets/images/above-beyond.jpg'), favourite: true },
-  { name: 'Tinlicker', genre: 'Melodic House', date: 'Feb 12', timesSeen: 2, image: require('../../assets/images/tinlicker.jpg'), favourite: true },
-  { name: 'Jan Blomqvist', genre: 'Dance, Electronica', date: 'Jan 20', timesSeen: 3, image: require('../../assets/images/jan-blomqvist.jpg'), favourite: false },
-  { name: 'Nish Kumar', genre: 'Comedian', date: 'Dec 15', timesSeen: 1, image: require('../../assets/images/nish-kumar.jpg'), favourite: false },
-];
+import { API_BASE_URL, BASIC_AUTH_HEADER } from '../../constants/Auth';
 
 export default function ArtistsScreen() {
   const [search, setSearch] = useState('');
@@ -28,6 +13,55 @@ export default function ArtistsScreen() {
   const [sortBy, setSortBy] = useState('lastSeen'); // 'name', 'lastSeen', 'timesSeen'
   const [sortOrder, setSortOrder] = useState('desc'); // 'asc', 'desc'
   const [showFavouritesOnly, setShowFavouritesOnly] = useState(false);
+  const [artists, setArtists] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  // Fetch artists data from API
+  useEffect(() => {
+    fetch(`${API_BASE_URL}/api/artists_seen/`, {
+      headers: {
+        'Authorization': BASIC_AUTH_HEADER,
+        'Content-Type': 'application/json',
+      },
+    })
+      .then(res => res.ok ? res.json() : [])
+      .then(data => {
+        setArtists(Array.isArray(data) ? data : []);
+        setLoading(false);
+      })
+      .catch(() => setLoading(false));
+  }, []);
+
+  // Genres from API data
+  const genres = ['All', ...Array.from(new Set(artists.map(a => a.genre).filter(Boolean)))];
+
+  // Favourites: top 5 by times_seen
+  const favourites = [...artists]
+    .sort((a, b) => b.times_seen - a.times_seen)
+    .slice(0, 5)
+    .map(a => ({
+      ...a,
+      image: a.artist_image ? { uri: a.artist_image } : require('../../assets/images/../../assets/images/above-beyond.jpg'),
+      genre: a.genre || '',
+      name: a.name,
+      gigs: a.times_seen,
+    }));
+
+  // Recent: sort by last_seen desc, take top 3
+  const recent = [...artists]
+    .sort((a, b) => new Date(b.last_seen).getTime() - new Date(a.last_seen).getTime())
+    .slice(0, 3);
+
+  // All artists from API
+  const allArtists = artists.map(a => ({
+    ...a,
+    date: a.last_seen ? new Date(a.last_seen).toLocaleDateString('en-GB', { month: 'short', day: '2-digit' }) : '',
+    timesSeen: a.times_seen,
+    favourite: a.favourited === 'y',
+    image: a.artist_image ? { uri: a.artist_image } : require('../../assets/images/../../assets/images/above-beyond.jpg'),
+    genre: a.genre || '',
+    name: a.name,
+  }));
 
   // Reset state when tab is focused
   useFocusEffect(
@@ -94,127 +128,121 @@ export default function ArtistsScreen() {
         />
       </View>
       <View style={styles.spacerSmall} />
-      {shouldHideSections && (
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.genreRow}>
-          {genres.map((g) => (
-            <TouchableOpacity key={g} style={g === selectedGenre ? styles.genreChipActive : styles.genreChip} onPress={() => {
-              setSelectedGenre(g);
-              setShowFavouritesOnly(true);
-              setSortBy('lastSeen');
-            }}>
-              <Text style={g === selectedGenre ? styles.genreTextActive : styles.genreText}>{g}</Text>
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
-      )}
-      {/* {!shouldHideSections && (
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.genreRow}>
-          {genres.map((g) => (
-            <TouchableOpacity key={g} style={g === selectedGenre ? styles.genreChipActive : styles.genreChip} onPress={() => setSelectedGenre(g)}>
-              <Text style={g === selectedGenre ? styles.genreTextActive : styles.genreText}>{g}</Text>
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
-      )} */}
-      {!shouldHideSections && (
+      {loading ? (
+        <Text style={{ textAlign: 'center', color: '#888', fontSize: 16, marginTop: 32 }}>Loading artists...</Text>
+      ) : (
         <>
-          <View style={styles.sectionHeadingRow}>
-            <View style={styles.sectionAccentBar} />
-            <Text style={styles.sectionTitle}>Your favourite artists</Text>
-            <TouchableOpacity onPress={() => {
-              setShowDetailedView(true);
-              setShowFavouritesOnly(true);
-              setSelectedGenre('All');
-            }}><Text style={styles.seeMore}>See more</Text></TouchableOpacity>
-          </View>
-          <View style={styles.spacerSmall} />
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.favRow}>
-            {favourites.map((artist, idx) => (
-              <TouchableOpacity
-                key={idx}
-                style={[styles.card, styles.favCard]}
-                onPress={() => {
-                  const artistId = artist.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
-                  require('expo-router').useRouter().push(`/artist-detail/${artistId}`);
-                }}
-              >
-                <Image source={artist.image} style={styles.favImage} />
-                <Text style={styles.favName}>{artist.name}</Text>
-                <Text style={styles.favGenre}>{artist.genre}</Text>
-                <View style={styles.gigCountBadge}><Text style={styles.gigCountText}>{artist.gigs} GIGS</Text></View>
-                <TouchableOpacity style={styles.viewBtn}><Text style={styles.viewBtnText}>View</Text></TouchableOpacity>
-              </TouchableOpacity>
-            ))}
-          </ScrollView>
-          <View style={styles.spacerSmall} />
-          <View style={styles.sectionHeadingRow}>
-            <View style={styles.sectionAccentBar} />
-            <Text style={styles.sectionSubTitle}>Most recently seen</Text>
-          </View>
-          <View style={styles.spacerSmall} />
-          {recent.map((artist, idx) => (
-            <TouchableOpacity
-              key={idx}
-              style={[styles.card, styles.recentCard]}
-              onPress={() => {
-                const artistId = artist.name.toLowerCase().replace(/\s+/g, '-');
-                require('expo-router').useRouter().push(`/artist-detail/${artistId}`);
-              }}
-            >
-              <Image source={artist.image} style={styles.recentImage} />
-              <View style={styles.recentInfo}>
-                <Text style={styles.recentName}>{artist.name}</Text>
-                <Text style={styles.recentGenre}>{artist.genre}</Text>
-                <Ionicons name="chevron-forward" size={22} color="#888" style={{ position: 'absolute', right: 0, top: 18 }} />
+          {shouldHideSections && (
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.genreRow}>
+              {genres.map((g) => (
+                <TouchableOpacity key={g} style={g === selectedGenre ? styles.genreChipActive : styles.genreChip} onPress={() => {
+                  setSelectedGenre(g);
+                  setShowFavouritesOnly(true);
+                  setSortBy('lastSeen');
+                }}>
+                  <Text style={g === selectedGenre ? styles.genreTextActive : styles.genreText}>{g}</Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          )}
+          {!shouldHideSections && (
+            <>
+              <View style={styles.sectionHeadingRow}>
+                <View style={styles.sectionAccentBar} />
+                <Text style={styles.sectionTitle}>Most seen artists</Text>
+                <TouchableOpacity onPress={() => {
+                  setShowDetailedView(true);
+                  setShowFavouritesOnly(false);
+                  setSelectedGenre('All');
+                  setSortBy('timesSeen');
+                }}><Text style={styles.seeMore}>See more</Text></TouchableOpacity>
               </View>
-            </TouchableOpacity>
-          ))}
-        </>
-      )}
-      <View style={styles.spacer} />
-      <View style={styles.sectionHeadingRow}>
-        <View style={styles.sectionAccentBar} />
-        <Text style={styles.sectionTitle}>All artists</Text>
-        <TouchableOpacity onPress={() => setShowDetailedView(!showDetailedView)}><Text style={styles.seeMore}>{showDetailedView ? 'See less' : 'See more'}</Text></TouchableOpacity>
-      </View>
-      <View style={styles.spacerSmall} />
-      {!showDetailedView && (
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.allBandsRow}>
-          {filteredArtists.map((artist, idx) => (
-            <TouchableOpacity
-              key={idx}
-              style={[styles.card, styles.allBandCard]}
-              onPress={() => {
-                const artistId = artist.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
-                require('expo-router').useRouter().push(`/artist-detail/${artistId}`);
-              }}
-            >
-              <Image source={artist.image} style={styles.allBandImage} />
-              <View style={styles.allBandDateBadge}><Text style={styles.allBandDateText}>{artist.date.toUpperCase()}</Text></View>
-              <Text style={styles.allBandName}>{artist.name}</Text>
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
-      )}
-      {showDetailedView && (
-        <>
-          <View style={styles.sortRow}>
-            <TouchableOpacity onPress={() => setSortBy('name')} style={sortBy === 'name' ? styles.sortActive : styles.sortButton}><Text style={sortBy === 'name' ? styles.sortTextActive : styles.sortText}>Name</Text></TouchableOpacity>
-            <TouchableOpacity onPress={() => setSortBy('lastSeen')} style={sortBy === 'lastSeen' ? styles.sortActive : styles.sortButton}><Text style={sortBy === 'lastSeen' ? styles.sortTextActive : styles.sortText}>Date</Text></TouchableOpacity>
-            <TouchableOpacity onPress={() => setSortBy('timesSeen')} style={sortBy === 'timesSeen' ? styles.sortActive : styles.sortButton}><Text style={sortBy === 'timesSeen' ? styles.sortTextActive : styles.sortText}>Times Seen</Text></TouchableOpacity>
-            <TouchableOpacity onPress={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')} style={styles.sortButton}><Text style={styles.sortText}>{sortOrder === 'asc' ? '↑' : '↓'}</Text></TouchableOpacity>
-            <TouchableOpacity onPress={() => setShowFavouritesOnly(fav => !fav)} style={showFavouritesOnly ? styles.sortActive : styles.sortButton}>
-              <Ionicons name={showFavouritesOnly ? 'heart' : 'heart-outline'} size={18} color={showFavouritesOnly ? '#EA4949' : '#888'} style={{ marginRight: 4 }} />
-              <Text style={showFavouritesOnly ? styles.sortTextActive : styles.sortText}></Text>
-            </TouchableOpacity>
+              <View style={styles.spacerSmall} />
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.favRow}>
+                {favourites.map((artist, idx) => (
+                  <TouchableOpacity
+                    key={idx}
+                    style={[styles.card, styles.favCard]}
+                    onPress={() => {
+                      require('expo-router').useRouter().push(`/artist-detail/${artist.id}`);
+                    }}
+                  >
+                    <Image source={artist.image} style={styles.favImage} />
+                    <Text style={styles.favName}>{artist.name}</Text>
+                    <Text style={styles.favGenre}>{artist.genre}</Text>
+                    <View style={styles.gigCountBadge}><Text style={styles.gigCountText}>{artist.gigs} GIGS</Text></View>
+                    <TouchableOpacity style={styles.viewBtn}><Text style={styles.viewBtnText}>View</Text></TouchableOpacity>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+              <View style={styles.spacerSmall} />
+              <View style={styles.sectionHeadingRow}>
+                <View style={styles.sectionAccentBar} />
+                <Text style={styles.sectionSubTitle}>Most recent</Text>
+              </View>
+              <View style={styles.spacerSmall} />
+              {recent.map((artist, idx) => (
+                <TouchableOpacity
+                  key={idx}
+                  style={[styles.card, styles.recentCard]}
+                  onPress={() => {
+                    require('expo-router').useRouter().push(`/artist-detail/${artist.id}`);
+                  }}
+                >
+                  <Image source={artist.image} style={styles.recentImage} />
+                  <View style={styles.recentInfo}>
+                    <Text style={styles.recentName}>{artist.name}</Text>
+                    <Text style={styles.recentGenre}>{artist.genre}</Text>
+                    <Ionicons name="chevron-forward" size={22} color="#888" style={{ position: 'absolute', right: 0, top: 18 }} />
+                  </View>
+                </TouchableOpacity>
+              ))}
+            </>
+          )}
+          <View style={styles.spacer} />
+          <View style={styles.sectionHeadingRow}>
+            <View style={styles.sectionAccentBar} />
+            <Text style={styles.sectionTitle}>All artists</Text>
+            <TouchableOpacity onPress={() => setShowDetailedView(!showDetailedView)}><Text style={styles.seeMore}>{showDetailedView ? 'See less' : 'See more'}</Text></TouchableOpacity>
           </View>
-          <BandsList
-            bands={showFavouritesOnly ? sortedFilteredArtists.filter(a => a.favourite) : sortedFilteredArtists}
-            onBandPress={item => {
-              const artistId = item.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
-              require('expo-router').useRouter().push(`/artist-detail/${artistId}`);
-            }}
-          />
+          <View style={styles.spacerSmall} />
+          {!showDetailedView && (
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.allBandsRow}>
+              {filteredArtists.map((artist, idx) => (
+                <TouchableOpacity
+                  key={idx}
+                  style={[styles.card, styles.allBandCard]}
+                  onPress={() => {
+                    require('expo-router').useRouter().push(`/artist-detail/${artist.id}`);
+                  }}
+                >
+                  <Image source={artist.image} style={styles.allBandImage} />
+                  <View style={styles.allBandDateBadge}><Text style={styles.allBandDateText}>{artist.date.toUpperCase()}</Text></View>
+                  <Text style={styles.allBandName}>{artist.name}</Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          )}
+          {showDetailedView && (
+            <>
+              <View style={styles.sortRow}>
+                <TouchableOpacity onPress={() => setSortBy('name')} style={sortBy === 'name' ? styles.sortActive : styles.sortButton}><Text style={sortBy === 'name' ? styles.sortTextActive : styles.sortText}>Name</Text></TouchableOpacity>
+                <TouchableOpacity onPress={() => setSortBy('lastSeen')} style={sortBy === 'lastSeen' ? styles.sortActive : styles.sortButton}><Text style={sortBy === 'lastSeen' ? styles.sortTextActive : styles.sortText}>Date</Text></TouchableOpacity>
+                <TouchableOpacity onPress={() => setSortBy('timesSeen')} style={sortBy === 'timesSeen' ? styles.sortActive : styles.sortButton}><Text style={sortBy === 'timesSeen' ? styles.sortTextActive : styles.sortText}>Times Seen</Text></TouchableOpacity>
+                <TouchableOpacity onPress={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')} style={styles.sortButton}><Text style={styles.sortText}>{sortOrder === 'asc' ? '↑' : '↓'}</Text></TouchableOpacity>
+                <TouchableOpacity onPress={() => setShowFavouritesOnly(fav => !fav)} style={showFavouritesOnly ? styles.sortActive : styles.sortButton}>
+                  <Ionicons name={showFavouritesOnly ? 'heart' : 'heart-outline'} size={18} color={showFavouritesOnly ? '#EA4949' : '#888'} style={{ marginRight: 4 }} />
+                  <Text style={showFavouritesOnly ? styles.sortTextActive : styles.sortText}></Text>
+                </TouchableOpacity>
+              </View>
+              <BandsList
+                bands={showFavouritesOnly ? sortedFilteredArtists.filter(a => a.favourite) : sortedFilteredArtists}
+                onBandPress={item => {
+                  require('expo-router').useRouter().push(`/artist-detail/${item.id}`);
+                }}
+              />
+            </>
+          )}
         </>
       )}
     </ScrollView>

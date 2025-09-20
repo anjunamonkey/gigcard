@@ -2,6 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useRef, useState } from 'react';
 import { Animated, Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { API_BASE_URL, BASIC_AUTH_HEADER } from '../../constants/Auth';
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -40,42 +41,82 @@ export default function HomeScreen() {
     }).start();
   }, []);
 
-  // Example metrics (replace with real data as needed)
+  // Fetch stats from API
+  const [statsData, setStatsData] = useState<any>(null);
+  const [statsLoading, setStatsLoading] = useState(true);
+
+  useEffect(() => {
+    fetch(`${API_BASE_URL}/api/userstats`, {
+      headers: {
+        'Authorization': BASIC_AUTH_HEADER,
+        'Content-Type': 'application/json',
+      },
+    })
+      .then(res => {
+        if (!res.ok) throw new Error('Stats API error');
+        return res.json();
+      })
+      .then(data => {
+        setStatsData(data);
+        setStatsLoading(false);
+      })
+      .catch(() => setStatsLoading(false));
+  }, []);
+
+  // Add this state and effect near your other API fetches:
+  const [recentGig, setRecentGig] = useState<any>(null);
+
+  useEffect(() => {
+    fetch(`${API_BASE_URL}/api/usergigs/?ordering=-gig__date&limit=1`, {
+      headers: {
+        'Authorization': BASIC_AUTH_HEADER,
+        'Content-Type': 'application/json',
+      },
+    })
+      .then(res => res.ok ? res.json() : null)
+      .then(data => {
+        if (data && data.results && data.results.length > 0) {
+          setRecentGig(data.results[0]);
+        }
+      });
+  }, []);
+
+  // Example metrics (now from API)
   const stats = [
     {
       label: 'Concerts Attended',
-      value: 169,
-  icon: 'musical-notes-outline',
+      value: statsData?.concerts_attended ?? '--',
+      icon: 'musical-notes-outline',
       onPress: () => router.push('./timeline'),
     },
     {
-      label: 'Bands Seen',
-      value: 169,
-  icon: 'people-outline',
+      label: 'Artists Seen',
+      value: statsData?.artists_seen ?? '--',
+      icon: 'people-outline',
       onPress: () => router.push('./bands'),
     },
     {
       label: 'Genres Seen',
-      value: 12,
-  icon: 'albums-outline',
+      value: statsData?.genres_seen ?? '--',
+      icon: 'albums-outline',
       onPress: () => {},
     },
     {
-      label: 'Most Times Seen',
-      value: 17,
-  icon: 'star-outline',
+      label: 'Most Seen',
+      value: statsData?.most_seen_artist ? `${statsData.most_seen_artist.name} (${statsData.most_seen_artist.count})` : '--',
+      icon: 'star-outline',
       onPress: () => router.push('./bands'),
     },
     {
       label: 'Memories Logged',
-      value: 42,
-  icon: 'images-outline',
+      value: statsData?.memories_count ?? '--',
+      icon: 'images-outline',
       onPress: () => router.push('./memories'),
     },
     {
       label: 'Venues',
-      value: 34,
-  icon: 'business-outline',
+      value: statsData?.unique_venues ?? '--',
+      icon: 'business-outline',
       onPress: () => router.push('./map'),
     },
   ];
@@ -136,13 +177,22 @@ export default function HomeScreen() {
         {/* Featured event card */}
         <TouchableOpacity
           style={[styles.card, styles.featuredCard]}
-          onPress={() => router.push(`/gig-detail/above-&-beyond-november-2024`)}
+          onPress={() => {
+            if (recentGig && recentGig.id) {
+              router.push(`/gig-detail/${recentGig.id}`);
+            }
+          }}
           activeOpacity={0.85}
         >
-          <Ionicons name={featuredEvent.icon} size={32} color="#EA4949" style={{ marginRight: 12 }} />
+          <Ionicons name="musical-notes" size={32} color="#EA4949" style={{ marginRight: 12 }} />
           <View style={{ flex: 1 }}>
-            <Text style={styles.featuredTitle}>Most recent: Foo Fighters</Text>
-            <Text style={styles.featuredSubtitle}>{featuredEvent.date} · {featuredEvent.location}</Text>
+            <Text style={styles.featuredTitle}>
+              {recentGig?.gig?.title ? `Most recent: ${recentGig.gig.title}` : 'Most recent gig'}
+            </Text>
+            <Text style={styles.featuredSubtitle}>
+              {recentGig?.gig?.date ? new Date(recentGig.gig.date).toLocaleDateString() : ''}
+              {recentGig?.gig?.venue?.city ? ` · ${recentGig.gig.venue.city}` : ''}
+            </Text>
           </View>
         </TouchableOpacity>
         <View style={styles.spacer} />
@@ -187,15 +237,19 @@ export default function HomeScreen() {
         <View style={styles.spacerSmall} />
         {/* Tile-based grid layout for stats */}
         <View style={styles.statsGrid}>
-          {stats.map((stat, idx) => (
-            <TouchableOpacity key={idx} style={[styles.card, styles.statTile]} onPress={stat.onPress} activeOpacity={0.85}>
-              <View style={styles.statTileContent}>
-                <Ionicons name={stat.icon as any} size={28} color="#0B1533" style={styles.statTileIcon} />
-                <Text style={styles.statTileLabel}>{stat.label}</Text>
-                <Text style={styles.statTileValue}>{stat.value}</Text>
-              </View>
-            </TouchableOpacity>
-          ))}
+          {statsLoading ? (
+            <Text style={{ textAlign: 'center', color: '#888', fontSize: 16, width: '100%' }}>Loading stats...</Text>
+          ) : (
+            stats.map((stat, idx) => (
+              <TouchableOpacity key={idx} style={[styles.card, styles.statTile]} onPress={stat.onPress} activeOpacity={0.85}>
+                <View style={styles.statTileContent}>
+                  <Ionicons name={stat.icon as any} size={28} color="#0B1533" style={styles.statTileIcon} />
+                  <Text style={styles.statTileLabel}>{stat.label}</Text>
+                  <Text style={styles.statTileValue}>{stat.value}</Text>
+                </View>
+              </TouchableOpacity>
+            ))
+          )}
         </View>
         <View style={styles.spacer} />
         {/* Badges section */}

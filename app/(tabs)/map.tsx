@@ -1,33 +1,61 @@
-import React, { useState } from 'react';
+import { useFocusEffect } from '@react-navigation/native';
+import React, { useEffect, useState } from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-
-const allCountries = [
-  { name: 'United Kingdom', cities: ['London', 'Manchester', 'Liverpool'] },
-  { name: 'France', cities: ['Paris', 'Lyon'] },
-];
-const allCities = [
-  { name: 'London', country: 'United Kingdom', venues: ['O2 Arena', 'Brixton Academy', 'Roundhouse'] },
-  { name: 'Manchester', country: 'United Kingdom', venues: ['Manchester Arena', 'Albert Hall'] },
-  { name: 'Liverpool', country: 'United Kingdom', venues: ['Echo Arena'] },
-  { name: 'Paris', country: 'France', venues: ['AccorHotels Arena'] },
-  { name: 'Lyon', country: 'France', venues: ['Le Transbordeur'] },
-];
-const allVenues = [
-  { name: 'O2 Arena', attended: 3 },
-  { name: 'Brixton Academy', attended: 2 },
-  { name: 'Roundhouse', attended: 1 },
-  { name: 'Manchester Arena', attended: 2 },
-  { name: 'Albert Hall', attended: 1 },
-  { name: 'Echo Arena', attended: 1 },
-  { name: 'AccorHotels Arena', attended: 1 },
-  { name: 'Le Transbordeur', attended: 1 },
-];
+import { API_BASE_URL, BASIC_AUTH_HEADER } from '../../constants/Auth';
 
 export default function MapScreen() {
-  // view: 'country' | 'city' | 'venue'
   const [view, setView] = useState('country');
   const [selectedCountry, setSelectedCountry] = useState<string | null>(null);
   const [selectedCity, setSelectedCity] = useState<string | null>(null);
+  const [venues, setVenues] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetch(`${API_BASE_URL}/api/venues_visited/`, {
+      headers: {
+        'Authorization': BASIC_AUTH_HEADER,
+        'Content-Type': 'application/json',
+      },
+    })
+      .then(res => res.ok ? res.json() : [])
+      .then(data => {
+        setVenues(Array.isArray(data) ? data : []);
+        setLoading(false);
+      })
+      .catch(() => setLoading(false));
+  }, []);
+
+  // Reset state when tab is focused
+  useFocusEffect(
+    React.useCallback(() => {
+      setView('country');
+      setSelectedCountry(null);
+      setSelectedCity(null);
+    }, [])
+  );
+
+  // Extract countries and cities from venues data
+  const allCountries = Array.from(new Set(venues.map(v => v.country))).map(country => ({
+    name: country,
+    cities: Array.from(new Set(venues.filter(v => v.country === country).map(v => v.city))),
+  }));
+
+  const allCities = Array.from(new Set(venues.map(v => v.city))).map(city => ({
+    name: city,
+    country: venues.find(v => v.city === city)?.country || '',
+    venues: venues.filter(v => v.city === city).map(v => v.name),
+  }));
+
+  const allVenues = venues.map(v => ({
+    name: v.name,
+    attended: v.times_visited,
+    address: v.address,
+    city: v.city,
+    country: v.country,
+    capacity: v.capacity,
+    venue_type: v.venue_type,
+    physical_type: v.physical_type,
+  }));
 
   // Logic for showing pills
   const showCountryPill = allCountries.length > 1;
@@ -40,7 +68,7 @@ export default function MapScreen() {
     ? allCities.filter(c => c.country === selectedCountry)
     : allCities;
   const filteredVenues = selectedCity
-    ? allCities.find(c => c.name === selectedCity)?.venues.map(v => allVenues.find(av => av.name === v)).filter(Boolean) || []
+    ? allVenues.filter(v => v.city === selectedCity)
     : allVenues;
 
   return (
@@ -74,45 +102,47 @@ export default function MapScreen() {
           )}
         </View>
       </View>
-
-      {/* Pills content */}
-      {view === 'country' && (
-        filteredCountries.map((country, idx) => (
-          <TouchableOpacity key={idx} style={styles.mapCard} onPress={() => { setSelectedCountry(country.name); setView('city'); }}>
-            <Text style={styles.mapTitle}>{country.name}</Text>
-            <Text style={styles.mapMeta}>{country.cities.length} Cities</Text>
-          </TouchableOpacity>
-        ))
-      )}
-      {view === 'city' && (
-        filteredCities.map((city, idx) => (
-          <TouchableOpacity key={idx} style={styles.mapCard} onPress={() => { setSelectedCity(city.name); setView('venue'); }}>
-            <Text style={styles.mapTitle}>{city.name}</Text>
-            <Text style={styles.mapMeta}>{city.venues.length} Venues</Text>
-          </TouchableOpacity>
-        ))
-      )}
-      {view === 'venue' && (
-        filteredVenues.map((venue, idx) => (
-          venue ? (
-            <TouchableOpacity
-              key={idx}
-              style={styles.mapCard}
-              onPress={() => {
-                // Navigate to timeline tab, passing venue filter
-                // If using expo-router, you might use router.push with params
-                // Example: router.push({ pathname: '/timeline', params: { venue: venue.name } })
-                // For now, use a simple route with query param
-                window.location.href = `/timeline?venue=${encodeURIComponent(venue.name)}`;
-              }}
-            >
-              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                <Text style={styles.mapTitle}>{venue.name}</Text>
-                <Text style={{ color: '#E94F4F', fontWeight: 'bold', fontSize: 16 }}>{venue.attended}x</Text>
-              </View>
-            </TouchableOpacity>
-          ) : null
-        ))
+      {loading ? (
+        <Text style={{ textAlign: 'center', color: '#888', fontSize: 16, marginTop: 32 }}>Loading venues...</Text>
+      ) : (
+        <>
+          {view === 'country' && (
+            filteredCountries.map((country, idx) => (
+              <TouchableOpacity key={idx} style={styles.mapCard} onPress={() => { setSelectedCountry(country.name); setView('city'); }}>
+                <Text style={styles.mapTitle}>{country.name}</Text>
+                <Text style={styles.mapMeta}>{country.cities.length} Cities</Text>
+              </TouchableOpacity>
+            ))
+          )}
+          {view === 'city' && (
+            filteredCities.map((city, idx) => (
+              <TouchableOpacity key={idx} style={styles.mapCard} onPress={() => { setSelectedCity(city.name); setView('venue'); }}>
+                <Text style={styles.mapTitle}>{city.name}</Text>
+                <Text style={styles.mapMeta}>{city.venues.length} Venues</Text>
+              </TouchableOpacity>
+            ))
+          )}
+          {view === 'venue' && (
+            filteredVenues.map((venue, idx) => (
+              <TouchableOpacity
+                key={idx}
+                style={styles.mapCard}
+                onPress={() => {
+                  require('expo-router').useRouter().push(`/timeline?venue=${encodeURIComponent(venue.name)}`);
+                }}
+              >
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <View>
+                    <Text style={styles.mapTitle}>{venue.name}</Text>
+                    <Text style={styles.mapMeta}>{venue.city}, {venue.country}</Text>
+                    <Text style={styles.mapMeta}>Capacity: {venue.capacity} · {venue.venue_type} · {venue.physical_type}</Text>
+                  </View>
+                  <Text style={{ color: '#E94F4F', fontWeight: 'bold', fontSize: 16 }}>{venue.attended}x</Text>
+                </View>
+              </TouchableOpacity>
+            ))
+          )}
+        </>
       )}
     </ScrollView>
   );

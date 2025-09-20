@@ -1,66 +1,38 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import React from 'react';
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-
-type Gig = { year: number; venue: string };
-type Artist = {
-  name: string;
-  seen: number;
-  bio: string;
-  gigs: Gig[];
-  memories: string[];
-};
-
-const ARTISTS: Record<string, Artist> = {
-  'above-beyond': {
-    name: 'Above & Beyond',
-    seen: 5,
-    bio: 'Above & Beyond are an electronic music group consisting of English musicians/DJs Jono Grant, Tony McGuinness and Finnish musician/DJ Paavo Siljamäki. Formed in 2000, they are the owners of London-based electronic dance music labels Anjunabeats, Anjunadeep and Anjunachill, and also host a weekly radio show titled Group Therapy Radio.',
-    gigs: [
-      { year: 2024, venue: 'Finsbury Park' },
-      { year: 2024, venue: 'Alexandra Palace' },
-      { year: 2023, venue: 'O2 Arena' },
-    ],
-    memories: ["#191919", "#888888", "#cccccc", "#ededed"]
-  },
-  'jan-blomqvist': {
-    name: 'Jan Blomqvist',
-    seen: 1,
-    bio: 'Jan Blomqvist is a German vocalist, guitarist and producer. He is known for his melodic, emotional electronic music and live performances.',
-    gigs: [
-      { year: 2023, venue: 'London' }
-    ],
-    memories: ["#222", "#aaa", "#ccc", "#eee"]
-  },
-  'elderbrook': {
-    name: 'Elderbrook',
-    seen: 1,
-    bio: 'Elderbrook is a British musician, songwriter and producer. He is known for blending elements of electronic, dance and pop music.',
-    gigs: [
-      { year: 2023, venue: 'London' }
-    ],
-    memories: ["#333", "#bbb", "#ddd", "#fff"]
-  },
-  'tinlicker': {
-    name: 'Tinlicker',
-    seen: 2,
-    bio: 'Tinlicker is a Dutch electronic music act and producer duo. Their sound blends progressive house, trance, and melodic techno.',
-    gigs: [],
-    memories: ["#444", "#bbb", "#ddd", "#fff"]
-  },
-  'nish-kumar': {
-    name: 'Nish Kumar',
-    seen: 0,
-    bio: 'Nish Kumar is a British stand-up comedian and radio presenter.',
-    gigs: [],
-    memories: ["#555", "#bbb", "#ddd", "#fff"]
-  }
-};
+import React, { useEffect, useState } from 'react';
+import { ActivityIndicator, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { API_BASE_URL, BASIC_AUTH_HEADER } from '../../constants/Auth';
 
 export default function ArtistDetailScreen() {
   const { artistId } = useLocalSearchParams();
   const router = useRouter();
-  const artist = ARTISTS[(artistId as string) || 'above-beyond'];
+  const [artist, setArtist] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!artistId) return;
+    fetch(`${API_BASE_URL}/api/artists_seen/artist_pk${artistId}/`, {
+      headers: {
+        'Authorization': BASIC_AUTH_HEADER,
+        'Content-Type': 'application/json',
+      },
+    })
+      .then(res => res.ok ? res.json() : null)
+      .then(data => {
+        setArtist(data);
+        setLoading(false);
+      })
+      .catch(() => setLoading(false));
+  }, [artistId]);
+
+  if (loading) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#fff' }}>
+        <ActivityIndicator size="large" color="#EA4949" />
+      </View>
+    );
+  }
+
   if (!artist) {
     return (
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#fff' }}>
@@ -73,22 +45,40 @@ export default function ArtistDetailScreen() {
     <ScrollView style={styles.container}>
       <View style={styles.headerImg} />
       <View style={styles.content}>
-        <Text style={styles.artistName}>{artist.name}</Text>
-        <Text style={styles.seen}>Seen {artist.seen} times</Text>
-        <Text style={styles.bio}>{artist.bio}</Text>
+        <Text style={styles.artistName}>{artist.artist_name}</Text>
+        <Text style={styles.seen}>Seen {artist.times_seen} times</Text>
+        <Text style={styles.bio}>{artist.artist_description || ''}</Text>
         <Text style={styles.sectionTitle}>Gigs</Text>
         <View style={styles.gigRow}>
-          {artist.gigs.map((gig: Gig, i: number) => (
-            <TouchableOpacity key={i} style={styles.gigChip}>
-              <Text style={styles.gigChipText}>{gig.year} - {gig.venue.toUpperCase()}</Text>
-            </TouchableOpacity>
-          ))}
+          {[...artist.usergigs]
+            .sort((a, b) => new Date(b.gig_date).getTime() - new Date(a.gig_date).getTime())
+            .map((gig: any, i: number) => (
+              <TouchableOpacity
+                key={gig.id}
+                style={styles.gigChip}
+                onPress={() => router.push(`/gig-detail/${gig.id}`)}
+              >
+                <Text style={styles.gigChipText}>
+                  {gig.gig_date ? new Date(gig.gig_date).toLocaleDateString() : ''} - {gig.gig_title}
+                </Text>
+              </TouchableOpacity>
+            ))}
         </View>
         <Text style={styles.sectionTitle}>Memories</Text>
         <View style={styles.memoriesRow}>
-          {artist.memories.map((color: string, i: number) => (
-            <View key={i} style={[styles.memoryDot, { backgroundColor: color }]} />
-          ))}
+          {artist.memories && artist.memories.length > 0 ? (
+            artist.memories.map((memory: any, i: number) => (
+              <View
+                key={i}
+                style={[
+                  styles.memoryDot,
+                  { backgroundColor: memory.color || memory || '#eee' }
+                ]}
+              />
+            ))
+          ) : (
+            <Text style={{ color: '#888', fontSize: 14 }}>No memories yet.</Text>
+          )}
         </View>
       </View>
     </ScrollView>
