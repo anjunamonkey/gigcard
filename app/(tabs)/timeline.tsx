@@ -1,91 +1,51 @@
 import { Ionicons } from '@expo/vector-icons';
-import React, { useState } from 'react';
-import { ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { ActivityIndicator, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { API_BASE_URL, BASIC_AUTH_HEADER } from '../../constants/Auth';
 
-const gigsByYear = {
-  2025: [
-    {
-      gigId: 'festival-anjuna-2025', // match gig-detail key
-      title: 'Anjunabeats Festival',
-      artists: ['Above & Beyond', 'Tinlicker', 'Jan Blomqvist', 'Elderbrook', 'Nish Kumar'],
-      date: 'July 2025',
-      city: 'London',
-      eventType: 'festival',
-      lineup: ['Above & Beyond', 'Tinlicker', 'Jan Blomqvist', 'Elderbrook', 'Nish Kumar'],
-      attendedArtists: ['Above & Beyond', 'Tinlicker', 'Elderbrook'],
-    },
-    // Add extra space above London Summer Fest
-    { spacer: true },
-    {
-      gigId: 'multi-day-festival-2025', // match gig-detail key
-      title: 'London Summer Fest',
-      artists: ['Above & Beyond', 'Tinlicker', 'Jan Blomqvist', 'Elderbrook', 'Nish Kumar'],
-      date: 'August 2025',
-      city: 'London',
-      eventType: 'multi-day',
-      days: [
-        {
-          date: 'Aug 1, 2025',
-          artists: ['Above & Beyond', 'Tinlicker'],
-          attended: true,
-          seenArtists: ['Above & Beyond']
-        },
-        {
-          date: 'Aug 2, 2025',
-          artists: ['Jan Blomqvist', 'Elderbrook', 'Nish Kumar'],
-          attended: false,
-          seenArtists: []
-        }
-      ]
-    }
-  ],
-  2024: [
-    {
-      gigId: 'above-&-beyond-november-2024',
-      title: 'Above & Beyond Live',
-      artists: ['Above & Beyond', 'Tinlicker', 'Jan Blomqvist', 'Nish Kumar'],
-      date: 'November 2024',
-      city: 'London',
-      eventType: 'gig'
-    },
-  ],
-  2023: [
-    { title: 'Jan Blomqvist Live', artists: ['Jan Blomqvist'], date: 'November 2023', city: 'London', eventType: 'gig' },
-  ],
-  2022: [
-    { title: 'Elderbrook Live', artists: ['Elderbrook'], date: 'October 2022', city: 'London', eventType: 'gig' },
-  ],
-};
 
 export default function TimelineScreen() {
   const [search, setSearch] = useState('');
   const [selectedYear, setSelectedYear] = useState<string | null>(null);
+  const [gigs, setGigs] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  type Gig = {
-    title?: string;
-    artists?: string[];
-    date?: string;
-    city?: string;
-    eventType?: 'gig' | 'festival' | 'multi-day';
-    lineup?: string[];
-    attendedArtists?: string[];
-    days?: { date: string; artists: string[]; attended?: boolean; seenArtists?: string[] }[];
-    gigId?: string;
-    spacer?: boolean;
-  };
-  type YearKey = keyof typeof gigsByYear;
+  useEffect(() => {
+  fetch(`${API_BASE_URL}/api/usergigs/`, {
+      headers: {
+        'Authorization': BASIC_AUTH_HEADER,
+        'Content-Type': 'application/json',
+      },
+    })
+      .then(res => {
+        if (!res.ok) throw new Error('Auth/API error');
+        return res.json();
+      })
+      .then(data => {
+        setGigs(Array.isArray(data.results) ? data.results : []);
+        setLoading(false);
+      })
+      .catch(() => setLoading(false));
+  }, []);
+
+  // Group gigs by year
+  const gigsByYear: Record<string, any[]> = {};
+  gigs.forEach(gig => {
+    const year = gig.gig?.date ? new Date(gig.gig.date).getFullYear().toString() : 'Unknown';
+    if (!gigsByYear[year]) gigsByYear[year] = [];
+    gigsByYear[year].push(gig);
+  });
 
   const years = Object.keys(gigsByYear).sort((a, b) => Number(b) - Number(a));
-  // For each year, filter gigs by search
   const gigsForDisplay = years
     .filter(year => !selectedYear || selectedYear === year)
     .map(year => ({
       year,
-      gigs: ((gigsByYear as Record<string, Gig[]>)[year] || []).filter((gig: Gig) =>
-        (gig.title && gig.title.toLowerCase().includes(search.toLowerCase())) ||
-        (gig.artists && gig.artists.some(a => a.toLowerCase().includes(search.toLowerCase()))) ||
-        (gig.city && gig.city.toLowerCase().includes(search.toLowerCase())) ||
-        (gig.date && gig.date.toLowerCase().includes(search.toLowerCase()))
+      gigs: gigsByYear[year].filter((gig: any) =>
+        (gig.gig?.title && gig.gig.title.toLowerCase().includes(search.toLowerCase())) ||
+        (gig.gig?.artists && gig.gig.artists.some((a: any) => a.name.toLowerCase().includes(search.toLowerCase()))) ||
+        (gig.gig?.venue?.city && gig.gig.venue.city.toLowerCase().includes(search.toLowerCase())) ||
+        (gig.gig?.date && gig.gig.date.toLowerCase().includes(search.toLowerCase()))
       )
     }));
 
@@ -129,64 +89,59 @@ export default function TimelineScreen() {
         </ScrollView>
       </View>
       <View style={styles.spacer} />
-      <ScrollView style={styles.timelineGigsColumn} contentContainerStyle={{ paddingBottom: 80 }}>
-        {gigsForDisplay.length === 0 || gigsForDisplay.every(y => y.gigs.length === 0) ? (
-          <Text style={styles.noGigsText}>No gigs found.</Text>
-        ) : (
-          gigsForDisplay.map(({ year, gigs }) => (
-            gigs.length > 0 && (
-              <View key={year}>
-                <View style={styles.sectionHeadingRow}>
-                  <View style={styles.sectionAccentBar} />
-                  <Text style={styles.yearHeader}>{year}</Text>
-                  <Text style={styles.yearCount}>{gigs.length}</Text>
-                </View>
-                <View style={styles.spacerSmall} />
-                {gigs.map((gig, idx) => (
-                  gig && gig.spacer ? (
-                    <View key={idx} style={{ height: 32 }} />
-                  ) : gig && gig.title ? (
+      {loading ? (
+        <ActivityIndicator size="large" color="#EA4949" style={{ marginTop: 40 }} />
+      ) : (
+        <ScrollView style={styles.timelineGigsColumn} contentContainerStyle={{ paddingBottom: 80 }}>
+          {gigsForDisplay.length === 0 || gigsForDisplay.every(y => y.gigs.length === 0) ? (
+            <Text style={styles.noGigsText}>No gigs found.</Text>
+          ) : (
+            gigsForDisplay.map(({ year, gigs }) => (
+              gigs.length > 0 && (
+                <View key={year}>
+                  <View style={styles.sectionHeadingRow}>
+                    <View style={styles.sectionAccentBar} />
+                    <Text style={styles.yearHeader}>{year}</Text>
+                    <Text style={styles.yearCount}>{gigs.length}</Text>
+                  </View>
+                  <View style={styles.spacerSmall} />
+                  {gigs.map((userGig, idx) => (
                     <TouchableOpacity
-                      key={idx}
+                      key={userGig.id || idx}
                       style={[styles.card, styles.gigCard]}
                       onPress={() => {
-                        const gigId = gig.gigId || `${gig.title ? gig.title.toLowerCase().replace(/\s+/g, '-') : 'unknown'}-${gig.date ? gig.date.toLowerCase().replace(/\s+/g, '-') : 'unknown'}`;
+                        // Use the correct gig ID for navigation
+                        const gigId = userGig.gig?.id || userGig.id || idx;
                         require('expo-router').useRouter().push(`/gig-detail/${gigId}`);
                       }}
                     >
-                      <Text style={styles.gigArtist}>{gig.title}</Text>
-                      <Text style={styles.gigDate}>{gig.date || ''}</Text>
-                      <Text style={styles.gigCity}>{gig.city || ''}</Text>
-                      {/* Show artists for multi-artist events */}
-                      {gig.artists && gig.artists.length > 1 && (
+                      <Text style={styles.gigArtist}>{userGig.gig.title}</Text>
+                      <Text style={styles.gigDate}>{userGig.gig.date ? new Date(userGig.gig.date).toLocaleDateString() : ''}</Text>
+                      <Text style={styles.gigCity}>{userGig.gig.venue?.city || ''}</Text>
+                      {userGig.gig.artists && userGig.gig.artists.length > 1 && (
                         <Text style={{ color: '#666', fontSize: 13, marginTop: 2 }}>
-                          Artists: {gig.artists.join(', ')}
+                          Artists: {userGig.gig.artists.map((a: any) => a.name).join(', ')}
                         </Text>
                       )}
-                      {/* Festival/Multiday info */}
-                      {gig.eventType === 'festival' && gig.lineup && (
+                      {userGig.gig.gig_type === 'festival' && userGig.gig.lineup && (
                         <Text style={{ color: '#E94F4F', fontSize: 13, marginTop: 2 }}>
-                          Festival: {gig.attendedArtists ? `${gig.attendedArtists.length}/${gig.lineup.length} artists seen` : `${gig.lineup.length} artists`}
+                          Festival: {userGig.gig.attendedArtists ? `${userGig.gig.attendedArtists.length}/${userGig.gig.lineup.length} artists seen` : `${userGig.gig.lineup.length} artists`}
                         </Text>
                       )}
-                      {gig.eventType === 'multi-day' && gig.days && (
+                      {userGig.gig.gig_type === 'multi-day' && userGig.gig.days && (
                         <Text style={{ color: '#E94F4F', fontSize: 13, marginTop: 2 }}>
-                          Multi-day: {gig.days.filter(d => d.attended).length}/{gig.days.length} days attended
+                          Multi-day: {userGig.gig.days.filter((d: any) => d.attended).length}/{userGig.gig.days.length} days attended
                         </Text>
                       )}
                     </TouchableOpacity>
-                  ) : (
-                    <View key={idx} style={[styles.card, styles.gigCard]}>
-                      <Text style={{ color: '#E94F4F', fontSize: 16 }}>Event not found or missing title.</Text>
-                    </View>
-                  )
-                ))}
-                <View style={styles.spacer} />
-              </View>
-            )
-          ))
-        )}
-      </ScrollView>
+                  ))}
+                  <View style={styles.spacer} />
+                </View>
+              )
+            ))
+          )}
+        </ScrollView>
+      )}
       {/* Floating Action Button */}
       <TouchableOpacity 
         style={styles.fab} 
