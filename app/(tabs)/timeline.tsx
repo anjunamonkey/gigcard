@@ -3,14 +3,57 @@ import React, { useState } from 'react';
 import { ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
 const gigsByYear = {
+  2025: [
+    {
+      gigId: 'festival-anjuna-2025', // match gig-detail key
+      title: 'Anjunabeats Festival',
+      artists: ['Above & Beyond', 'Tinlicker', 'Jan Blomqvist', 'Elderbrook', 'Nish Kumar'],
+      date: 'July 2025',
+      city: 'London',
+      eventType: 'festival',
+      lineup: ['Above & Beyond', 'Tinlicker', 'Jan Blomqvist', 'Elderbrook', 'Nish Kumar'],
+      attendedArtists: ['Above & Beyond', 'Tinlicker', 'Elderbrook'],
+    },
+    // Add extra space above London Summer Fest
+    { spacer: true },
+    {
+      gigId: 'multi-day-festival-2025', // match gig-detail key
+      title: 'London Summer Fest',
+      artists: ['Above & Beyond', 'Tinlicker', 'Jan Blomqvist', 'Elderbrook', 'Nish Kumar'],
+      date: 'August 2025',
+      city: 'London',
+      eventType: 'multi-day',
+      days: [
+        {
+          date: 'Aug 1, 2025',
+          artists: ['Above & Beyond', 'Tinlicker'],
+          attended: true,
+          seenArtists: ['Above & Beyond']
+        },
+        {
+          date: 'Aug 2, 2025',
+          artists: ['Jan Blomqvist', 'Elderbrook', 'Nish Kumar'],
+          attended: false,
+          seenArtists: []
+        }
+      ]
+    }
+  ],
   2024: [
-    { artist: 'Above & Beyond', date: 'November 2024', city: 'London' },
+    {
+      gigId: 'above-&-beyond-november-2024',
+      title: 'Above & Beyond Live',
+      artists: ['Above & Beyond', 'Tinlicker', 'Jan Blomqvist', 'Nish Kumar'],
+      date: 'November 2024',
+      city: 'London',
+      eventType: 'gig'
+    },
   ],
   2023: [
-    { artist: 'Jan Blomqvist', date: 'November 2023', city: 'London' },
+    { title: 'Jan Blomqvist Live', artists: ['Jan Blomqvist'], date: 'November 2023', city: 'London', eventType: 'gig' },
   ],
   2022: [
-    { artist: 'Elderbrook', date: 'October 2022', city: 'London' },
+    { title: 'Elderbrook Live', artists: ['Elderbrook'], date: 'October 2022', city: 'London', eventType: 'gig' },
   ],
 };
 
@@ -18,7 +61,18 @@ export default function TimelineScreen() {
   const [search, setSearch] = useState('');
   const [selectedYear, setSelectedYear] = useState<string | null>(null);
 
-  type Gig = { artist: string; date: string; city: string };
+  type Gig = {
+    title?: string;
+    artists?: string[];
+    date?: string;
+    city?: string;
+    eventType?: 'gig' | 'festival' | 'multi-day';
+    lineup?: string[];
+    attendedArtists?: string[];
+    days?: { date: string; artists: string[]; attended?: boolean; seenArtists?: string[] }[];
+    gigId?: string;
+    spacer?: boolean;
+  };
   type YearKey = keyof typeof gigsByYear;
 
   const years = Object.keys(gigsByYear).sort((a, b) => Number(b) - Number(a));
@@ -28,9 +82,10 @@ export default function TimelineScreen() {
     .map(year => ({
       year,
       gigs: ((gigsByYear as Record<string, Gig[]>)[year] || []).filter((gig: Gig) =>
-        gig.artist.toLowerCase().includes(search.toLowerCase()) ||
-        gig.city.toLowerCase().includes(search.toLowerCase()) ||
-        gig.date.toLowerCase().includes(search.toLowerCase())
+        (gig.title && gig.title.toLowerCase().includes(search.toLowerCase())) ||
+        (gig.artists && gig.artists.some(a => a.toLowerCase().includes(search.toLowerCase()))) ||
+        (gig.city && gig.city.toLowerCase().includes(search.toLowerCase())) ||
+        (gig.date && gig.date.toLowerCase().includes(search.toLowerCase()))
       )
     }));
 
@@ -88,18 +143,43 @@ export default function TimelineScreen() {
                 </View>
                 <View style={styles.spacerSmall} />
                 {gigs.map((gig, idx) => (
-                  <TouchableOpacity
-                    key={idx}
-                    style={[styles.card, styles.gigCard]}
-                    onPress={() => {
-                      const gigId = `${gig.artist.toLowerCase().replace(/\s+/g, '-')}-${gig.date.toLowerCase().replace(/\s+/g, '-')}`;
-                      require('expo-router').useRouter().push(`/gig-detail/${gigId}`);
-                    }}
-                  >
-                    <Text style={styles.gigArtist}>{gig.artist}</Text>
-                    <Text style={styles.gigDate}>{gig.date}</Text>
-                    <Text style={styles.gigCity}>{gig.city}</Text>
-                  </TouchableOpacity>
+                  gig && gig.spacer ? (
+                    <View key={idx} style={{ height: 32 }} />
+                  ) : gig && gig.title ? (
+                    <TouchableOpacity
+                      key={idx}
+                      style={[styles.card, styles.gigCard]}
+                      onPress={() => {
+                        const gigId = gig.gigId || `${gig.title ? gig.title.toLowerCase().replace(/\s+/g, '-') : 'unknown'}-${gig.date ? gig.date.toLowerCase().replace(/\s+/g, '-') : 'unknown'}`;
+                        require('expo-router').useRouter().push(`/gig-detail/${gigId}`);
+                      }}
+                    >
+                      <Text style={styles.gigArtist}>{gig.title}</Text>
+                      <Text style={styles.gigDate}>{gig.date || ''}</Text>
+                      <Text style={styles.gigCity}>{gig.city || ''}</Text>
+                      {/* Show artists for multi-artist events */}
+                      {gig.artists && gig.artists.length > 1 && (
+                        <Text style={{ color: '#666', fontSize: 13, marginTop: 2 }}>
+                          Artists: {gig.artists.join(', ')}
+                        </Text>
+                      )}
+                      {/* Festival/Multiday info */}
+                      {gig.eventType === 'festival' && gig.lineup && (
+                        <Text style={{ color: '#E94F4F', fontSize: 13, marginTop: 2 }}>
+                          Festival: {gig.attendedArtists ? `${gig.attendedArtists.length}/${gig.lineup.length} artists seen` : `${gig.lineup.length} artists`}
+                        </Text>
+                      )}
+                      {gig.eventType === 'multi-day' && gig.days && (
+                        <Text style={{ color: '#E94F4F', fontSize: 13, marginTop: 2 }}>
+                          Multi-day: {gig.days.filter(d => d.attended).length}/{gig.days.length} days attended
+                        </Text>
+                      )}
+                    </TouchableOpacity>
+                  ) : (
+                    <View key={idx} style={[styles.card, styles.gigCard]}>
+                      <Text style={{ color: '#E94F4F', fontSize: 16 }}>Event not found or missing title.</Text>
+                    </View>
+                  )
                 ))}
                 <View style={styles.spacer} />
               </View>
@@ -217,7 +297,7 @@ const styles = StyleSheet.create({
   noGigsText: { color: '#888', fontSize: 16, textAlign: 'center', marginTop: 32 },
   gigCard: {
     padding: 16,
-    marginBottom: 0,
+    marginBottom: 18,
     borderRadius: 8,
     borderLeftWidth: 4,
     borderLeftColor: '#E94F4F',
