@@ -1,3 +1,4 @@
+import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React from 'react';
 import { Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
@@ -17,40 +18,45 @@ export default function MemoriesScreen() {
   };
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 80 }}>
-      <PageTitle style={styles.title}>Memories</PageTitle>
-      <View style={styles.carousel}>
-        <TouchableOpacity style={styles.carouselMain} onPress={() => handleMemoryPress(memories[0].gigId)}>
-          <Text style={styles.carouselText}>Swipe to browse memories</Text>
-        </TouchableOpacity>
-        {/* Placeholder for carousel dots */}
-        <View style={styles.carouselDotRow}>
-          {memories.map((_, idx) => (
-            <View key={idx} style={[styles.carouselDot, idx === 0 && styles.carouselDotActive]} />
+    <View style={{ flex: 1 }}>
+      <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 80 }}>
+        <PageTitle style={styles.title}>Memories</PageTitle>
+        <View style={styles.carousel}>
+          <TouchableOpacity style={styles.carouselMain} onPress={() => handleMemoryPress(memories[0].gigId)}>
+            <Text style={styles.carouselText}>Swipe to browse memories</Text>
+          </TouchableOpacity>
+          {/* Placeholder for carousel dots */}
+          <View style={styles.carouselDotRow}>
+            {memories.map((_, idx) => (
+              <View key={idx} style={[styles.carouselDot, idx === 0 && styles.carouselDotActive]} />
+            ))}
+          </View>
+        </View>
+        <Text style={styles.sectionTitle}>Recent</Text>
+        <View style={styles.memoriesRow}>
+          {memories.slice(0, 2).map((m, idx) => (
+            <TouchableOpacity key={idx} style={styles.memoryCard} onPress={() => handleMemoryPress(m.gigId)}>
+              <Image source={m.image} style={styles.memoryImage} />
+              <Text style={styles.memoryCaption}>{m.caption}</Text>
+            </TouchableOpacity>
           ))}
         </View>
-      </View>
-      <Text style={styles.sectionTitle}>Recent</Text>
-      <View style={styles.memoriesRow}>
-        {memories.slice(0, 2).map((m, idx) => (
-          <TouchableOpacity key={idx} style={styles.memoryCard} onPress={() => handleMemoryPress(m.gigId)}>
-            <Image source={m.image} style={styles.memoryImage} />
-            <Text style={styles.memoryCaption}>{m.caption}</Text>
+        <Text style={styles.sectionTitle}>All Memories</Text>
+        {memories.map((memory, idx) => (
+          <TouchableOpacity
+            key={idx}
+            style={styles.memoryListItem}
+            onPress={() => handleMemoryPress(memory.gigId)}
+          >
+            <Image source={memory.image} style={styles.memoryListImage} />
+            <Text style={styles.memoryListCaption}>{memory.caption}</Text>
           </TouchableOpacity>
         ))}
-      </View>
-      <Text style={styles.sectionTitle}>All Memories</Text>
-      {memories.map((memory, idx) => (
-        <TouchableOpacity
-          key={idx}
-          style={styles.memoryListItem}
-          onPress={() => handleMemoryPress(memory.gigId)}
-        >
-          <Image source={memory.image} style={styles.memoryListImage} />
-          <Text style={styles.memoryListCaption}>{memory.caption}</Text>
-        </TouchableOpacity>
-      ))}
-    </ScrollView>
+      </ScrollView>
+      <TouchableOpacity style={styles.fab} onPress={() => {}}>
+        <Ionicons name="image-outline" size={22} color="#fff" />
+      </TouchableOpacity>
+    </View>
   );
 }
 
@@ -124,4 +130,16 @@ const styles = StyleSheet.create({
     marginRight: 12
   },
   memoryListCaption: { fontSize: 16, color: '#0B1533', flex: 1 },
+  fab: {
+    position: 'absolute',
+    bottom: 28,
+    right: 20,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: '#EA4949',
+    justifyContent: 'center',
+    alignItems: 'center',
+    elevation: 6,
+  },
 });

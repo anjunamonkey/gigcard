@@ -7,6 +7,7 @@ import { API_BASE_URL, BASIC_AUTH_HEADER } from '../../constants/Auth';
 export default function TimelineScreen() {
   const [search, setSearch] = useState('');
   const [selectedYear, setSelectedYear] = useState<string | null>(null);
+  const [sortBy, setSortBy] = useState<'date' | 'rating'>('date'); // new: sorting mode
   const [gigs, setGigs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -37,17 +38,37 @@ export default function TimelineScreen() {
   });
 
   const years = Object.keys(gigsByYear).sort((a, b) => Number(b) - Number(a));
+  // Build display groups, apply search filter and sorting (by date or rating)
   const gigsForDisplay = years
     .filter(year => !selectedYear || selectedYear === year)
-    .map(year => ({
-      year,
-      gigs: gigsByYear[year].filter((gig: any) =>
+    .map(year => {
+      // filter by search
+      const filtered = gigsByYear[year].filter((gig: any) =>
         (gig.gig?.title && gig.gig.title.toLowerCase().includes(search.toLowerCase())) ||
         (gig.gig?.artists && gig.gig.artists.some((a: any) => a.name.toLowerCase().includes(search.toLowerCase()))) ||
         (gig.gig?.venue?.city && gig.gig.venue.city.toLowerCase().includes(search.toLowerCase())) ||
         (gig.gig?.date && gig.gig.date.toLowerCase().includes(search.toLowerCase()))
-      )
-    }));
+      );
+
+      // sort according to sortBy
+      const sorted = filtered.slice().sort((a: any, b: any) => {
+        if (sortBy === 'rating') {
+          // assume rating could be at userGig.rating or userGig.gig.rating
+          const ra = (a.rating ?? a.gig?.rating ?? null);
+          const rb = (b.rating ?? b.gig?.rating ?? null);
+          const na = ra == null ? -1 : Number(ra);
+          const nb = rb == null ? -1 : Number(rb);
+          return nb - na; // descending rating
+        } else {
+          // sort by date descending
+          const da = a.gig?.date ? new Date(a.gig.date).getTime() : 0;
+          const db = b.gig?.date ? new Date(b.gig.date).getTime() : 0;
+          return db - da;
+        }
+      });
+
+      return { year, gigs: sorted };
+    });
 
   return (
     <View style={styles.timelineContainer}>
@@ -62,6 +83,23 @@ export default function TimelineScreen() {
           onChangeText={setSearch}
           placeholderTextColor="#888"
         />
+      </View>
+      {/* Sort controls */}
+      <View style={{ height: 40, marginTop: 10, marginHorizontal: 18 }}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ alignItems: 'center' }}>
+          <TouchableOpacity
+            style={sortBy === 'date' ? styles.timelineSortChipActive : styles.timelineSortChip}
+            onPress={() => setSortBy('date')}
+          >
+            <Text style={sortBy === 'date' ? styles.timelineSortTextActive : styles.timelineSortText}>Sort: Date</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={sortBy === 'rating' ? styles.timelineSortChipActive : styles.timelineSortChip}
+            onPress={() => setSortBy('rating')}
+          >
+            <Text style={sortBy === 'rating' ? styles.timelineSortTextActive : styles.timelineSortText}>Sort: Rating</Text>
+          </TouchableOpacity>
+        </ScrollView>
       </View>
       <View style={styles.spacerSmall} />
       <View style={{ height: 32, marginBottom: 0, marginTop: 0 }}>
@@ -116,23 +154,31 @@ export default function TimelineScreen() {
                       }}
                     >
                       <Text style={styles.gigArtist}>{userGig.gig.title}</Text>
-                      <Text style={styles.gigDate}>{userGig.gig.date ? new Date(userGig.gig.date).toLocaleDateString() : ''}</Text>
-                      <Text style={styles.gigCity}>{userGig.gig.venue?.city || ''}</Text>
-                      {userGig.gig.artists && userGig.gig.artists.length > 1 && (
-                        <Text style={{ color: '#666', fontSize: 13, marginTop: 2 }}>
-                          Artists: {userGig.gig.artists.map((a: any) => a.name).join(', ')}
-                        </Text>
-                      )}
-                      {userGig.gig.gig_type === 'festival' && userGig.gig.lineup && (
-                        <Text style={{ color: '#E94F4F', fontSize: 13, marginTop: 2 }}>
-                          Festival: {userGig.gig.attendedArtists ? `${userGig.gig.attendedArtists.length}/${userGig.gig.lineup.length} artists seen` : `${userGig.gig.lineup.length} artists`}
-                        </Text>
-                      )}
-                      {userGig.gig.gig_type === 'multi-day' && userGig.gig.days && (
-                        <Text style={{ color: '#E94F4F', fontSize: 13, marginTop: 2 }}>
-                          Multi-day: {userGig.gig.days.filter((d: any) => d.attended).length}/{userGig.gig.days.length} days attended
-                        </Text>
-                      )}
+                      {/* Date and rating row */}
+                      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 6 }}>
+                        <Text style={styles.gigDate}>{userGig.gig.date ? new Date(userGig.gig.date).toLocaleDateString() : ''}{userGig.gig.venue?.city ? ` · ${userGig.gig.venue.city}` : ''}</Text>
+                        <View style={styles.gigRatingWrap}>
+                          <Ionicons name="star" size={14} color="#E94F4F" style={{ marginRight: 6 }} />
+                          <Text style={styles.gigRatingText}>
+                            { (userGig.rating ?? userGig.gig?.rating ?? null) != null ? String((userGig.rating ?? userGig.gig?.rating)) : '--' }
+                          </Text>
+                        </View>
+                      </View>
+                       {userGig.gig.artists && userGig.gig.artists.length > 1 && (
+                         <Text style={{ color: '#666', fontSize: 13, marginTop: 2 }}>
+                           Artists: {userGig.gig.artists.map((a: any) => a.name).join(', ')}
+                         </Text>
+                       )}
+                       {userGig.gig.gig_type === 'festival' && userGig.gig.lineup && (
+                         <Text style={{ color: '#E94F4F', fontSize: 13, marginTop: 2 }}>
+                           Festival: {userGig.gig.attendedArtists ? `${userGig.gig.attendedArtists.length}/${userGig.gig.lineup.length} artists seen` : `${userGig.gig.lineup.length} artists`}
+                         </Text>
+                       )}
+                       {userGig.gig.gig_type === 'multi-day' && userGig.gig.days && (
+                         <Text style={{ color: '#E94F4F', fontSize: 13, marginTop: 2 }}>
+                           Multi-day: {userGig.gig.days.filter((d: any) => d.attended).length}/{userGig.gig.days.length} days attended
+                         </Text>
+                       )}
                     </TouchableOpacity>
                   ))}
                   <View style={styles.spacer} />
@@ -290,4 +336,28 @@ const styles = StyleSheet.create({
     padding: 0,
     margin: 0,
   },
+  timelineSortChip: {
+    backgroundColor: '#f0f0f0',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    marginRight: 8,
+    height: 32,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  timelineSortChipActive: {
+    backgroundColor: '#0B1533',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    marginRight: 8,
+    height: 32,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  timelineSortText: { color: '#666', fontWeight: '600', fontSize: 13 },
+  timelineSortTextActive: { color: '#fff', fontWeight: '600', fontSize: 13 },
+  gigRatingWrap: { flexDirection: 'row', alignItems: 'center' },
+  gigRatingText: { color: '#E94F4F', fontSize: 14, fontWeight: '700' },
 });

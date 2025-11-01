@@ -1,7 +1,7 @@
 import { useFocusEffect } from '@react-navigation/native';
 import React, { useEffect, useState } from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { API_BASE_URL, BASIC_AUTH_HEADER } from '../../constants/Auth';
+import { API_BASE_URL, BASIC_AUTH_HEADER } from '../constants/Auth';
 
 export default function MapScreen() {
   const [view, setView] = useState('country');

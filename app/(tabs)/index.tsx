@@ -1,11 +1,24 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useRef, useState } from 'react';
-import { Animated, Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Alert, Animated, Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { API_BASE_URL, BASIC_AUTH_HEADER } from '../../constants/Auth';
 
 export default function HomeScreen() {
   const router = useRouter();
+
+  // safe navigation helpers
+  const safeNavigateToGig = (id?: string | number | null) => {
+    if (typeof id === 'string' && id.trim().length > 0) {
+      router.push(`/gig-detail/${id}`);
+      return;
+    }
+    if (typeof id === 'number') {
+      router.push(`/gig-detail/${String(id)}`);
+      return;
+    }
+    Alert.alert('Not available', 'Unable to navigate to gig (missing id).');
+  };
 
   // Dummy badges
   const badges = [
@@ -81,6 +94,25 @@ export default function HomeScreen() {
       });
   }, []);
 
+  // Fetch recent activities from API
+  const [recentActivities, setRecentActivities] = useState<any[]>([]);
+  const [activitiesLoading, setActivitiesLoading] = useState(true);
+
+  useEffect(() => {
+    fetch(`${API_BASE_URL}/api/recent-activity/`, {
+      headers: {
+        'Authorization': BASIC_AUTH_HEADER,
+        'Content-Type': 'application/json',
+      },
+    })
+      .then(res => res.ok ? res.json() : [])
+      .then(data => {
+        setRecentActivities(Array.isArray(data) ? data.slice(0, 3) : []);
+        setActivitiesLoading(false);
+      })
+      .catch(() => setActivitiesLoading(false));
+  }, []);
+
   // Example metrics (now from API)
   const stats = [
     {
@@ -93,19 +125,24 @@ export default function HomeScreen() {
       label: 'Artists Seen',
       value: statsData?.artists_seen ?? '--',
       icon: 'people-outline',
-      onPress: () => router.push('./bands'),
+      // navigate to all artists sorted by date (lastSeen)
+      onPress: () => router.push('/artists?sort=lastSeen'),
     },
     {
       label: 'Genres Seen',
       value: statsData?.genres_seen ?? '--',
       icon: 'albums-outline',
-      onPress: () => {},
+      // navigate to the new genres template
+      onPress: () => router.push('/genres'),
     },
+    // Changed: expose count and artist name separately so we can style the name smaller
     {
       label: 'Most Seen',
-      value: statsData?.most_seen_artist ? `${statsData.most_seen_artist.name} (${statsData.most_seen_artist.count})` : '--',
+      value: statsData?.most_seen_artist ? (statsData.most_seen_artist.count ?? '--') : '--',
+      subtext: statsData?.most_seen_artist ? statsData.most_seen_artist.name : null,
       icon: 'star-outline',
-      onPress: () => router.push('./bands'),
+      // navigate to all artists sorted by times seen
+      onPress: () => router.push('/artists?sort=timesSeen'),
     },
     {
       label: 'Memories Logged',
@@ -178,9 +215,8 @@ export default function HomeScreen() {
         <TouchableOpacity
           style={[styles.card, styles.featuredCard]}
           onPress={() => {
-            if (recentGig && recentGig.id) {
-              router.push(`/gig-detail/${recentGig.id}`);
-            }
+            const gigId = recentGig?.gig?.id ?? recentGig?.id ?? null;
+            safeNavigateToGig(gigId);
           }}
           activeOpacity={0.85}
         >
@@ -216,9 +252,33 @@ export default function HomeScreen() {
         {/* Section heading for stats */}
         <View style={styles.sectionHeadingRow}>
           <View style={styles.sectionAccentBar} />
-          <Text style={styles.sectionHeading}>Your Stats</Text>
+          <Text style={styles.sectionHeading}>Stats</Text>
         </View>
         <View style={styles.spacerSmall} />
+
+
+        <View style={styles.spacerSmall} />
+        {/* Tile-based grid layout for stats */}
+        <View style={styles.statsGrid}>
+          {statsLoading ? (
+            <Text style={{ textAlign: 'center', color: '#888', fontSize: 16, width: '100%' }}>Loading stats...</Text>
+          ) : (
+            stats.map((stat, idx) => (
+              <TouchableOpacity key={idx} style={[styles.card, styles.statTile]} onPress={stat.onPress} activeOpacity={0.85}>
+                <View style={styles.statTileContent}>
+                  <Ionicons name={stat.icon as any} size={28} color="#0B1533" style={styles.statTileIcon} />
+                  <Text style={styles.statTileLabel}>{stat.label}</Text>
+                  {/* Render value and optional smaller subtext (artist name) */}
+                  <View style={{ alignItems: 'center' }}>
+                    <Text style={styles.statTileValue}>{stat.value}</Text>
+                    {stat.subtext ? <Text style={styles.statTileSubtext} numberOfLines={1} ellipsizeMode="tail">{stat.subtext}</Text> : null}
+                  </View>
+                </View>
+              </TouchableOpacity>
+            ))
+          )}
+        </View>
+
 
         {/* Discover GigCard Pro tile */}
         <TouchableOpacity
@@ -234,28 +294,12 @@ export default function HomeScreen() {
             </View>
           </View>
         </TouchableOpacity>
-        <View style={styles.spacerSmall} />
-        {/* Tile-based grid layout for stats */}
-        <View style={styles.statsGrid}>
-          {statsLoading ? (
-            <Text style={{ textAlign: 'center', color: '#888', fontSize: 16, width: '100%' }}>Loading stats...</Text>
-          ) : (
-            stats.map((stat, idx) => (
-              <TouchableOpacity key={idx} style={[styles.card, styles.statTile]} onPress={stat.onPress} activeOpacity={0.85}>
-                <View style={styles.statTileContent}>
-                  <Ionicons name={stat.icon as any} size={28} color="#0B1533" style={styles.statTileIcon} />
-                  <Text style={styles.statTileLabel}>{stat.label}</Text>
-                  <Text style={styles.statTileValue}>{stat.value}</Text>
-                </View>
-              </TouchableOpacity>
-            ))
-          )}
-        </View>
+
         <View style={styles.spacer} />
         {/* Badges section */}
         <View style={styles.sectionHeadingRow}>
           <View style={styles.sectionAccentBar} />
-          <Text style={styles.sectionHeading}>Your Badges</Text>
+          <Text style={styles.sectionHeading}>Achievements</Text>
         </View>
         <View style={styles.spacerSmall} />
         <TouchableOpacity
@@ -325,23 +369,37 @@ export default function HomeScreen() {
         </View>
         <View style={styles.spacerSmall} />
         <View style={styles.activityFeed}>
-          {recentActivity.map((item, idx) => (
-            <View key={idx} style={[styles.card, styles.activityCard]}>
-              <Ionicons
-                name={
-                  item.type === 'concert' ? 'musical-notes' :
-                  item.type === 'memory' ? 'images' :
-                  item.type === 'band' ? 'people' :
-                  item.type === 'review' ? 'star' :
-                  'ellipse'
-                }
-                size={22}
-                color="#EA4949"
-                style={{ marginRight: 8 }}
-              />
-              <Text style={styles.activityText}>{item.text}</Text>
-            </View>
-          ))}
+          {activitiesLoading ? (
+            <Text style={{ textAlign: 'center', color: '#888', fontSize: 16 }}>Loading...</Text>
+          ) : recentActivities.length === 0 ? (
+            <Text style={{ textAlign: 'center', color: '#888', fontSize: 16 }}>No recent activity</Text>
+          ) : (
+            recentActivities.map((item, idx) => (
+              <TouchableOpacity
+                key={idx}
+                style={[styles.card, styles.activityCard]}
+                onPress={() => {
+                  if (item.gig_id) {
+                    safeNavigateToGig(item.gig_id);
+                  }
+                }}
+                activeOpacity={0.85}
+              >
+                <Ionicons
+                  name={
+                    item.type === 'gig_attended' ? 'musical-notes' :
+                    item.type === 'photo_added' ? 'camera' :
+                    item.type === 'rating_added' ? 'star' :
+                    'ellipse'
+                  }
+                  size={22}
+                  color="#EA4949"
+                  style={{ marginRight: 8 }}
+                />
+                <Text style={styles.activityText}>{item.description}</Text>
+              </TouchableOpacity>
+            ))
+          )}
         </View>
         {/* GigCards actions card - moved to bottom */}
         <View style={styles.spacer} />
@@ -553,14 +611,14 @@ const styles = StyleSheet.create({
     paddingVertical: 18,
     paddingHorizontal: 12,
     alignItems: 'center',
-    justifyContent: 'center',
+    justifyContent: 'flex-start', // align content to top so labels align across tiles
     borderWidth: 0,
     elevation: 0,
     shadowOpacity: 0,
   },
   statTileContent: {
     alignItems: 'center',
-    justifyContent: 'center',
+    justifyContent: 'flex-start', // stack content from the top
   },
   statTileIcon: {
     marginBottom: 8,
@@ -577,6 +635,13 @@ const styles = StyleSheet.create({
     fontSize: 22,
     fontWeight: 'bold',
     textAlign: 'center',
+  },
+  statTileSubtext: {
+    color: '#0B1533',
+    fontSize: 11,    // slightly smaller than the number
+    fontWeight: '600',
+    marginTop: 2,    // closer to the number
+    opacity: 0.85,
   },
   // Divider
   divider: {
