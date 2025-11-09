@@ -1,11 +1,13 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
+import { useLocalSearchParams } from 'expo-router';
 import React, { useCallback, useEffect, useState } from 'react';
 import { Image, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import BandsList from '../../components/BandsList';
 import { API_BASE_URL, BASIC_AUTH_HEADER } from '../../constants/Auth';
 
 export default function ArtistsScreen() {
+  const params = useLocalSearchParams();
   const [search, setSearch] = useState('');
   const [selectedGenre, setSelectedGenre] = useState('All');
   const [showAllArtists, setShowAllArtists] = useState(false); // Add this state
@@ -15,6 +17,22 @@ export default function ArtistsScreen() {
   const [showFavouritesOnly, setShowFavouritesOnly] = useState(false);
   const [artists, setArtists] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [genresHierarchy, setGenresHierarchy] = useState<any[]>([]);
+
+  // Fetch genres hierarchy from API
+  useEffect(() => {
+    fetch(`${API_BASE_URL}/api/genres?parents=true`, {
+      headers: {
+        'Authorization': BASIC_AUTH_HEADER,
+        'Content-Type': 'application/json',
+      },
+    })
+      .then(res => res.ok ? res.json() : [])
+      .then(data => {
+        setGenresHierarchy(Array.isArray(data) ? data : []);
+      })
+      .catch(() => setGenresHierarchy([]));
+  }, []);
 
   // Fetch artists data from API
   useEffect(() => {
@@ -32,6 +50,36 @@ export default function ArtistsScreen() {
       .catch(() => setLoading(false));
   }, []);
 
+  // Recursively collect all sub-genre names for a given genre
+  function getAllSubGenreNames(genreName: string): string[] {
+    if (genreName === 'All') return [];
+    
+    const findGenre = (genres: any[], name: string): any => {
+      for (const g of genres) {
+        if (g.name.toLowerCase() === name.toLowerCase()) return g;
+        if (g.subgenres && g.subgenres.length > 0) {
+          const found = findGenre(g.subgenres, name);
+          if (found) return found;
+        }
+      }
+      return null;
+    };
+
+    const collectSubGenres = (genre: any): string[] => {
+      if (!genre) return [];
+      const names = [genre.name];
+      if (genre.subgenres && genre.subgenres.length > 0) {
+        for (const sub of genre.subgenres) {
+          names.push(...collectSubGenres(sub));
+        }
+      }
+      return names;
+    };
+
+    const genre = findGenre(genresHierarchy, genreName);
+    return collectSubGenres(genre);
+  }
+
   // Genres from API data
   const genres = ['All', ...Array.from(new Set(artists.map(a => a.genre).filter(Boolean)))];
 
@@ -41,7 +89,7 @@ export default function ArtistsScreen() {
     .slice(0, 5)
     .map(a => ({
       ...a,
-      image: a.artist_image ? { uri: a.artist_image } : require('../../assets/images/../../assets/images/above-beyond.jpg'),
+      image: a.artist_image_absolute,
       genre: a.genre || '',
       name: a.name,
       gigs: a.times_seen,
@@ -58,26 +106,48 @@ export default function ArtistsScreen() {
     date: a.last_seen ? new Date(a.last_seen).toLocaleDateString('en-GB', { month: 'short', day: '2-digit' }) : '',
     timesSeen: a.times_seen,
     favourite: a.favourited === 'y',
-    image: a.artist_image ? { uri: a.artist_image } : require('../../assets/images/../../assets/images/above-beyond.jpg'),
+    image: a.artist_image_absolute,
     genre: a.genre || '',
     name: a.name,
   }));
 
-  // Reset state when tab is focused
+  // Reset / apply route params when tab is focused
   useFocusEffect(
     useCallback(() => {
-      setSearch('');
-      setSelectedGenre('All');
-      setShowDetailedView(false);
-      setSortBy('lastSeen');
-      setSortOrder('desc');
-    }, [])
+      // If a genre param is present, prefill and open detailed view
+      if (params && typeof params.genre === 'string' && params.genre.trim() !== '') {
+        setSearch('');
+        setSelectedGenre(params.genre);
+        setShowDetailedView(params.showDetailed === 'true' || params.showDetailed === true);
+        // when opening from genre link, prefer sorting by timesSeen so "Most seen" appears
+        setSortBy('timesSeen');
+        setSortOrder('desc');
+      } else {
+        // default reset
+        setSearch('');
+        setSelectedGenre('All');
+        setShowDetailedView(false);
+        setSortBy('lastSeen');
+        setSortOrder('desc');
+      }
+    }, [params?.genre, params?.showDetailed])
   );
 
-  const filteredArtists = allArtists.filter(artist =>
-    (selectedGenre === 'All' || (artist.genre && artist.genre.toLowerCase().includes(selectedGenre.toLowerCase()))) &&
-    artist.name.toLowerCase().includes(search.toLowerCase())
-  );
+  const filteredArtists = allArtists.filter(artist => {
+    // Genre filtering with sub-genres support
+    let genreMatch = selectedGenre === 'All';
+    if (!genreMatch && artist.genre) {
+      const allowedGenres = getAllSubGenreNames(selectedGenre);
+      genreMatch = allowedGenres.some(g => 
+        artist.genre.toLowerCase().includes(g.toLowerCase())
+      );
+    }
+    
+    // Search filtering
+    const searchMatch = artist.name.toLowerCase().includes(search.toLowerCase());
+    
+    return genreMatch && searchMatch;
+  });
 
   const sortedFilteredArtists = [...filteredArtists].sort((a, b) => {
     let aVal: string | Date | number;
@@ -115,7 +185,7 @@ export default function ArtistsScreen() {
 
   return (
     <View style={{ flex: 1 }}>
-      <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 140 }}>
+      <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 16 }}>
         <Text style={styles.title}>Artists</Text>
         <View style={styles.spacer} />
         <View style={[styles.card, styles.headerRow]}>
@@ -172,7 +242,13 @@ export default function ArtistsScreen() {
                       <Text style={styles.favName}>{artist.name}</Text>
                       <Text style={styles.favGenre}>{artist.genre}</Text>
                       <View style={styles.gigCountBadge}><Text style={styles.gigCountText}>{artist.gigs} GIGS</Text></View>
-                      <TouchableOpacity style={styles.viewBtn}><Text style={styles.viewBtnText}>View</Text></TouchableOpacity>
+                      <TouchableOpacity
+                        style={styles.viewBtn}
+                        onPress={() => require('expo-router').useRouter().push(`/artist-detail/${artist.id}`)}
+                        activeOpacity={0.85}
+                      >
+                        <Text style={styles.viewBtnText}>View</Text>
+                      </TouchableOpacity>
                     </TouchableOpacity>
                   ))}
                 </ScrollView>

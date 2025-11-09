@@ -19,7 +19,7 @@ export default function MemoriesScreen() {
 
   return (
     <View style={{ flex: 1 }}>
-      <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 80 }}>
+      <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 16 }}>
         <PageTitle style={styles.title}>Memories</PageTitle>
         <View style={styles.carousel}>
           <TouchableOpacity style={styles.carouselMain} onPress={() => handleMemoryPress(memories[0].gigId)}>

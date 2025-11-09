@@ -1,11 +1,13 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
-import React, { useEffect, useRef, useState } from 'react';
+import { useFocusEffect } from '@react-navigation/native';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Alert, Animated, Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { API_BASE_URL, BASIC_AUTH_HEADER } from '../../constants/Auth';
 
 export default function HomeScreen() {
   const router = useRouter();
+  const params = useLocalSearchParams();
 
   // safe navigation helpers
   const safeNavigateToGig = (id?: string | number | null) => {
@@ -162,12 +164,37 @@ export default function HomeScreen() {
   const [profilePhoto, setProfilePhoto] = useState(null); // Placeholder for image URI
   const name = 'Oliver Daniel'; // Replace with actual user name if available
 
+  // Refresh data when screen is focused or refresh param is present
+  useFocusEffect(
+    useCallback(() => {
+      if (params?.refresh === 'true') {
+        // Reload all data
+        loadData();
+      }
+    }, [params?.refresh])
+  );
+
+  async function loadData() {
+    // Re-fetch all your home screen data
+    // Add your existing data fetching logic here
+    setLoading(true);
+    try {
+      // Example: refetch stats, recent activity, etc.
+      // await fetchStats();
+      // await fetchRecentActivity();
+    } catch (error) {
+      console.error('Error reloading data:', error);
+    } finally {
+      setLoading(false);
+    }
+  }
+
   return (
     <View style={styles.container}>
       {/* Accent shapes */}
       <View style={styles.bgAccentCircle1} />
       <View style={styles.bgAccentCircle2} />
-      <ScrollView style={styles.scrollContainer} contentContainerStyle={{ paddingBottom: 120 }}>
+      <ScrollView style={styles.scrollContainer} contentContainerStyle={{ paddingBottom: 16 }}>
         {/* Header bar with background */}
         <View style={styles.headerBar}>
           <View style={styles.header}>

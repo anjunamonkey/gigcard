@@ -63,7 +63,7 @@ export default function ProfileScreen() {
   };
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 80 }}>
+    <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 16 }}>
       <View style={styles.headerRow}>
         <PageTitle>Profile</PageTitle>
         <TouchableOpacity onPress={() => setEditingProfile(true)} style={styles.editProfileLink}>

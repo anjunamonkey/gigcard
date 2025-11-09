@@ -28,6 +28,30 @@ export default function GenresView() {
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
 
+	// Recursively aggregate metrics (artists_count and gigs_attended_count) from a genre and all nested subgenres
+	function aggregateMetrics(g: GenreDTO) {
+		const getOwnArtists = (x?: GenreDTO) => (x?.artists_count ?? (x?.artists ? x.artists.length : 0)) ?? 0;
+		const getOwnGigs = (x?: GenreDTO) => (x?.gigs_attended_count ?? 0) ?? 0;
+
+		function recurse(node?: GenreDTO[] | null): { artists: number; gigs: number } {
+			if (!node || node.length === 0) return { artists: 0, gigs: 0 };
+			return node.reduce((acc, child) => {
+				const childOwnArtists = getOwnArtists(child);
+				const childOwnGigs = getOwnGigs(child);
+				const nested = recurse(child.subgenres);
+				return {
+					artists: acc.artists + childOwnArtists + nested.artists,
+					gigs: acc.gigs + childOwnGigs + nested.gigs,
+				};
+			}, { artists: 0, gigs: 0 });
+		}
+
+		const ownArtists = getOwnArtists(g);
+		const ownGigs = getOwnGigs(g);
+		const nestedTotals = recurse(g.subgenres);
+		return { artists: ownArtists + nestedTotals.artists, gigs: ownGigs + nestedTotals.gigs };
+	}
+
 	useEffect(() => {
 		async function load() {
 			setLoading(true);
@@ -80,13 +104,12 @@ export default function GenresView() {
 	}
 
 	function goToGenreArtists(genreName: string) {
-		// Navigate to artists tab with genre filter
-		// Using router.push with query params
+		// Navigate to artists tab: open the detailed "All artists / See more" view filtered by genre.
+		// Use a query URL so expo-router resolves the artists tab and passes params.
 		const router = require('expo-router').useRouter();
-		router.push({
-			pathname: '/(tabs)/artists',
-			params: { genre: genreName, showDetailed: 'true' }
-		});
+		const q = `?genre=${encodeURIComponent(genreName)}&showDetailed=true`;
+		// push into the artists tab (tabs route maps /artists)
+		router.push(`/artists${q}`);
 	}
 
 	if (loading) return (
@@ -103,18 +126,22 @@ export default function GenresView() {
 
 	return (
 		<View style={styles.container}>
-			<ScrollView contentContainerStyle={{ paddingBottom: 80 }}>
+			<ScrollView contentContainerStyle={{ paddingBottom: 16 }}>
 				<Text style={styles.title}>Genres</Text>
 				<View style={styles.spacer} />
 
 				{/* Grid of parent genre cards */}
 				{genres.map((g) => {
-					const artistsCount = g.artists_count ?? (g.artists ? g.artists.length : 0);
-					const gigsCount = g.gigs_attended_count ?? 0;
+					// aggregate metrics from this genre and all nested subgenres
+					const { artists: artistsCount, gigs: gigsCount } = aggregateMetrics(g);
 					const isEmpty = artistsCount === 0 && gigsCount === 0;
+					const hasSubgenres = g.subgenres && g.subgenres.length > 0;
 					return (
 						<View key={g.id} style={[styles.card, styles.genreCard, isEmpty && { opacity: 0.5 }]}>
-							<TouchableOpacity style={styles.cardInner} onPress={() => toggleExpand(g.id)}>
+							<TouchableOpacity 
+								style={styles.cardInner} 
+								onPress={() => hasSubgenres ? toggleExpand(g.id) : goToGenreArtists(g.name)}
+							>
 								{g.genre_image ? (
 									<Image source={{ uri: g.genre_image }} style={styles.thumb} />
 								) : (
@@ -132,15 +159,25 @@ export default function GenresView() {
 										<Text style={styles.metric}>Gigs: <Text style={styles.metricBold}>{gigsCount}</Text></Text>
 									</View>
 								</View>
-								<Ionicons 
-									name={expanded[g.id] ? "chevron-up" : "chevron-down"} 
-									size={24} 
-									color="#666" 
-								/>
+								{hasSubgenres && (
+									<Ionicons 
+										name={expanded[g.id] ? "chevron-up" : "chevron-down"} 
+										size={24} 
+										color="#666" 
+									/>
+								)}
 							</TouchableOpacity>
 
-							{expanded[g.id] && (
+							{expanded[g.id] && hasSubgenres && (
 								<View style={styles.subListWrap}>
+									<TouchableOpacity 
+										style={styles.viewAllButton}
+										onPress={() => goToGenreArtists(g.name)}
+									>
+										<Text style={styles.viewAllText}>View All {g.name} Artists</Text>
+										<Ionicons name="arrow-forward" size={16} color="#EA4949" />
+									</TouchableOpacity>
+									
 									{(g.subgenres && g.subgenres.length > 0) ? (
 										<>
 											{/* Attended subgenres - vertical list */}
@@ -412,5 +449,22 @@ const styles = StyleSheet.create({
 		fontSize: 12,
 		color: '#666',
 		fontWeight: '500',
+	},
+	viewAllButton: {
+		flexDirection: 'row',
+		alignItems: 'center',
+		justifyContent: 'space-between',
+		paddingVertical: 10,
+		paddingHorizontal: 12,
+		backgroundColor: '#fff',
+		borderRadius: 8,
+		marginBottom: 12,
+		borderWidth: 1,
+		borderColor: '#EA4949',
+	},
+	viewAllText: {
+		fontSize: 14,
+		fontWeight: '600',
+		color: '#EA4949',
 	},
 });

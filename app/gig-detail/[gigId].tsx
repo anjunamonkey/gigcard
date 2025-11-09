@@ -125,6 +125,23 @@ const GigDetail = () => {
   const [userGig, setUserGig] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
+  // Navigate to artist detail. Prefer numeric id; otherwise use name/slug as identifier.
+  const goToArtistDetail = (artist: any) => {
+    if (!artist) return;
+    // If it's an object with a numeric id, use that
+    if (typeof artist === 'object' && artist.id) {
+      router.push(`/artist-detail/${artist.id}`);
+      return;
+    }
+    // If it's a string or an object with a name, navigate to artist-detail using the name/slug.
+    const identifier = typeof artist === 'string' ? artist : (artist.name || String(artist));
+    if (identifier && identifier.toString().trim().length > 0) {
+      // encode to keep URL safe; artist-detail handler should attempt to resolve by id or slug/name
+      router.push(`/artist-detail/${encodeURIComponent(identifier)}`);
+      return;
+    }
+  };
+
   useEffect(() => {
     if (!gigId) {
       setLoading(false);
@@ -160,7 +177,9 @@ const GigDetail = () => {
     const fallbackGig = gigId && gigs[gigId as string];
     if (fallbackGig) {
       const gig = fallbackGig;
-      const rating = 4;
+      // Use any rating present on the fallback gig if provided, otherwise null
+      const rawRatingFallback = (gig as any).rating ?? null;
+      const numericRatingFallback = rawRatingFallback != null ? Number(rawRatingFallback) : null;
       const handleViewMoreGigs = () => {
         if (gig.artists && gig.artists.length > 0) {
           router.push(`/timeline?artist=${encodeURIComponent(gig.artists[0].name || gig.artists[0])}`);
@@ -176,15 +195,19 @@ const GigDetail = () => {
               <Text style={styles.dateChipText}>{gig.date ? new Date(gig.date).toLocaleDateString() : ''}</Text>
             </TouchableOpacity>
             <View style={styles.ratingRow}>
-              {[...Array(5)].map((_, i) => (
-                <Ionicons
-                  key={i}
-                  name={i < rating ? 'star' : 'star-outline'}
-                  size={22}
-                  color={i < rating ? '#011030' : '#EA4949'}
-                  style={{ marginRight: 2 }}
-                />
-              ))}
+              {numericRatingFallback == null ? (
+                <Text style={{ color: '#888', fontSize: 14 }}>--</Text>
+              ) : (
+                [...Array(5)].map((_, i) => (
+                  <Ionicons
+                    key={i}
+                    name={i < Math.round(numericRatingFallback) ? 'star' : 'star-outline'}
+                    size={22}
+                    color={i < Math.round(numericRatingFallback) ? '#011030' : '#EA4949'}
+                    style={{ marginRight: 2 }}
+                  />
+                ))
+              )}
             </View>
             <Text style={styles.bio}>{gig.bio || ''}</Text>
             {/* Show either Artists or Festival Lineup */}
@@ -217,7 +240,9 @@ const GigDetail = () => {
                             color={gig.attendedArtists && gig.attendedArtists.some((a: any) => a.name === artist.name) ? '#4CAF50' : '#888'}
                             style={{ marginRight: 10 }}
                           />
-                          <Text style={{ fontSize: 16 }}>{artist.name || artist}</Text>
+                          <TouchableOpacity onPress={() => goToArtistDetail(artist)}>
+                            <Text style={{ fontSize: 16 }}>{artist.name || artist}</Text>
+                          </TouchableOpacity>
                         </View>
                       ))}
                       <TouchableOpacity
@@ -235,7 +260,9 @@ const GigDetail = () => {
                 <Text style={styles.sectionTitle}>Artists</Text>
                 <View style={{ marginBottom: 12 }}>
                   {gig.artists && gig.artists.map((artist: any, idx: number) => (
-                    <Text key={idx} style={{ color: '#0B1533', fontWeight: 'bold', fontSize: 15, marginBottom: 2 }}>{artist.name || artist}</Text>
+                    <TouchableOpacity key={idx} onPress={() => goToArtistDetail(artist)} style={{ marginBottom: 2 }}>
+                      <Text style={{ color: '#0B1533', fontWeight: 'bold', fontSize: 15 }}>{artist.name || artist}</Text>
+                    </TouchableOpacity>
                   ))}
                 </View>
               </View>
@@ -259,7 +286,9 @@ const GigDetail = () => {
                           color={day.seenArtists && day.seenArtists.some((a: any) => a.name === artist.name) ? '#4CAF50' : '#888'}
                           style={{ marginRight: 6 }}
                         />
-                        <Text style={{ color: '#0B1533', fontSize: 14 }}>{artist.name || artist}</Text>
+                        <TouchableOpacity onPress={() => goToArtistDetail(artist)}>
+                          <Text style={{ color: '#0B1533', fontSize: 14 }}>{artist.name || artist}</Text>
+                        </TouchableOpacity>
                       </View>
                     ))}
                     <Text style={{ color: '#666', fontSize: 12, marginTop: 2 }}>
@@ -294,7 +323,9 @@ const GigDetail = () => {
   }
 
   const gig = userGig.gig;
-  const rating = userGig.rating || 4;
+  // Prefer explicit userGig.rating, fall back to gig.rating if present
+  const rawRating = userGig.rating ?? userGig.gig?.rating ?? null;
+  const numericRating = rawRating != null ? Number(rawRating) : null;
   const handleViewMoreGigs = () => {
     if (gig.artists && gig.artists.length > 0) {
       router.push(`/timeline?artist=${encodeURIComponent(gig.artists[0].name || gig.artists[0])}`);
@@ -311,15 +342,19 @@ const GigDetail = () => {
           <Text style={styles.dateChipText}>{gig.date ? new Date(gig.date).toLocaleDateString() : ''}</Text>
         </TouchableOpacity>
         <View style={styles.ratingRow}>
-          {[...Array(5)].map((_, i) => (
-            <Ionicons
-              key={i}
-              name={i < rating ? 'star' : 'star-outline'}
-              size={22}
-              color={i < rating ? '#011030' : '#EA4949'}
-              style={{ marginRight: 2 }}
-            />
-          ))}
+          {numericRating == null ? (
+            <Text style={{ color: '#888', fontSize: 14 }}>--</Text>
+          ) : (
+            [...Array(5)].map((_, i) => (
+              <Ionicons
+                key={i}
+                name={i < Math.round(numericRating) ? 'star' : 'star-outline'}
+                size={22}
+                color={i < Math.round(numericRating) ? '#011030' : '#EA4949'}
+                style={{ marginRight: 2 }}
+              />
+            ))
+          )}
         </View>
         <Text style={styles.bio}>{gig.bio || ''}</Text>
         {/* Show either Artists or Festival Lineup */}
@@ -352,7 +387,9 @@ const GigDetail = () => {
                         color={gig.attendedArtists && gig.attendedArtists.some((a: any) => a.name === artist.name) ? '#4CAF50' : '#888'}
                         style={{ marginRight: 10 }}
                       />
-                      <Text style={{ fontSize: 16 }}>{artist.name || artist}</Text>
+                      <TouchableOpacity onPress={() => goToArtistDetail(artist)}>
+                        <Text style={{ fontSize: 16 }}>{artist.name || artist}</Text>
+                      </TouchableOpacity>
                     </View>
                   ))}
                   <TouchableOpacity
@@ -370,7 +407,9 @@ const GigDetail = () => {
             <Text style={styles.sectionTitle}>Artists</Text>
             <View style={{ marginBottom: 12 }}>
               {gig.artists && gig.artists.map((artist: any, idx: number) => (
-                <Text key={idx} style={{ color: '#0B1533', fontWeight: 'bold', fontSize: 15, marginBottom: 2 }}>{artist.name || artist}</Text>
+                <TouchableOpacity key={idx} onPress={() => goToArtistDetail(artist)} style={{ marginBottom: 2 }}>
+                  <Text style={{ color: '#0B1533', fontWeight: 'bold', fontSize: 15 }}>{artist.name || artist}</Text>
+                </TouchableOpacity>
               ))}
             </View>
           </View>
@@ -394,7 +433,9 @@ const GigDetail = () => {
                       color={day.seenArtists && day.seenArtists.some((a: any) => a.name === artist.name) ? '#4CAF50' : '#888'}
                       style={{ marginRight: 6 }}
                     />
-                    <Text style={{ color: '#0B1533', fontSize: 14 }}>{artist.name || artist}</Text>
+                    <TouchableOpacity onPress={() => goToArtistDetail(artist)}>
+                      <Text style={{ color: '#0B1533', fontSize: 14 }}>{artist.name || artist}</Text>
+                    </TouchableOpacity>
                   </View>
                 ))}
                 <Text style={{ color: '#666', fontSize: 12, marginTop: 2 }}>

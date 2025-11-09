@@ -3,8 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { API_BASE_URL, BASIC_AUTH_HEADER } from '../../constants/Auth';
 
-// Use a valid fallback image path. Place a default image at /Users/oliverdaniel/gigcard/app/app/assets/images/default-artist.png
-const defaultArtistImage = require('../../assets/images/default-artist.png');
+// Removed the default static fallback image
 
 export default function ArtistDetailScreen() {
   const { artistId } = useLocalSearchParams();
@@ -12,22 +11,85 @@ export default function ArtistDetailScreen() {
   const [artist, setArtist] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    if (!artistId) return;
-    fetch(`${API_BASE_URL}/api/artists_seen/artist_pk${artistId}/`, {
-      headers: {
-        'Authorization': BASIC_AUTH_HEADER,
-        'Content-Type': 'application/json',
-      },
-    })
-      .then(res => res.ok ? res.json() : null)
-      .then(data => {
-        setArtist(data);
-        setLoading(false);
-      })
-      .catch(() => setLoading(false));
-  }, [artistId]);
+  // Helper to fetch detail by numeric id (uses your ArtistsSeenDetailAPIView)
+  async function fetchArtistDetailById(id: string | number) {
+    try {
+      setLoading(true);
+      const res = await fetch(`${API_BASE_URL}/api/artists_seen/artist_pk${id}/`, {
+        headers: {
+          'Authorization': BASIC_AUTH_HEADER,
+          'Content-Type': 'application/json',
+        },
+      });
+      if (!res.ok) return null;
+      const data = await res.json();
+      return data;
+    } catch (e) {
+      return null;
+    } finally {
+      setLoading(false);
+    }
+  }
 
+  // Helper to fetch the list of seen artists and try to resolve by name
+  async function findArtistByName(name: string) {
+    try {
+      setLoading(true);
+      const res = await fetch(`${API_BASE_URL}/api/artists_seen/`, {
+        headers: {
+          'Authorization': BASIC_AUTH_HEADER,
+          'Content-Type': 'application/json',
+        },
+      });
+      if (!res.ok) return null;
+      const list = await res.json();
+      if (!Array.isArray(list)) return null;
+      const lower = name.toLowerCase();
+      const match = list.find((it: any) => {
+        const n = (it.name ?? it.artist_name ?? '').toString().toLowerCase();
+        return n === lower;
+      }) || list.find((it: any) => {
+        const n = (it.name ?? it.artist_name ?? '').toString().toLowerCase();
+        return n.includes(lower);
+      });
+      if (!match) return null;
+      return await fetchArtistDetailById(match.id);
+    } catch (e) {
+      return null;
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    if (!artistId) {
+      setLoading(false);
+      return;
+    }
+
+    let mounted = true;
+    (async () => {
+      setArtist(null);
+      setLoading(true);
+      const idStr = String(artistId);
+      const decoded = decodeURIComponent(idStr);
+      const isNumeric = /^\d+$/.test(decoded);
+
+      let detail = null;
+      if (isNumeric) {
+        detail = await fetchArtistDetailById(decoded);
+      } else {
+        // try resolving by name/slug
+        detail = await findArtistByName(decoded);
+      }
+
+      if (!mounted) return;
+      setArtist(detail);
+      setLoading(false);
+    })();
+    return () => { mounted = false; };
+  }, [artistId]);
+  
   if (loading) {
     return (
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#fff' }}>
@@ -39,7 +101,16 @@ export default function ArtistDetailScreen() {
   if (!artist) {
     return (
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#fff' }}>
-        <Text style={{ color: '#E94F4F', fontWeight: 'bold', fontSize: 18 }}>Artist not found</Text>
+        <Text style={{ color: '#E94F4F', fontWeight: 'bold', fontSize: 18, marginBottom: 12 }}>Artist not found</Text>
+        <Text style={{ color: '#666', fontSize: 14, textAlign: 'center', marginHorizontal: 24, marginBottom: 16 }}>
+          We couldn't resolve this artist. You can search the artists list instead.
+        </Text>
+        <TouchableOpacity
+          onPress={() => router.push(`/artists?search=${encodeURIComponent(String(artistId || ''))}&showDetailed=true`)}
+          style={{ backgroundColor: '#EA4949', paddingHorizontal: 16, paddingVertical: 10, borderRadius: 8 }}
+        >
+          <Text style={{ color: '#fff', fontWeight: 'bold' }}>Search artists</Text>
+        </TouchableOpacity>
       </View>
     );
   }
@@ -47,10 +118,12 @@ export default function ArtistDetailScreen() {
   return (
     <ScrollView style={styles.container}>
       <View style={styles.headerImg}>
-        <Image
-          source={artist.artist_image ? { uri: artist.artist_image } : defaultArtistImage}
-          style={{ width: '100%', height: 220, resizeMode: 'cover', borderRadius: 0 }}
-        />
+        {artist.artist_image_absolute ? (
+          <Image
+            source={{ uri: `${API_BASE_URL}/media/artist_images/artist-default.png` }}
+            style={{ width: '100%', height: '100%', resizeMode: 'cover' }}
+          />
+        ) : null}
       </View>
       <View style={styles.content}>
         <Text style={styles.artistName}>{artist.artist_name}</Text>

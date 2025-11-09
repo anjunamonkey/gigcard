@@ -85,7 +85,7 @@ export default function TimelineScreen() {
         />
       </View>
       {/* Sort controls */}
-      <View style={{ height: 40, marginTop: 10, marginHorizontal: 18 }}>
+      {/* <View style={{ height: 40, marginTop: 10, marginHorizontal: 18 }}>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ alignItems: 'center' }}>
           <TouchableOpacity
             style={sortBy === 'date' ? styles.timelineSortChipActive : styles.timelineSortChip}
@@ -100,7 +100,7 @@ export default function TimelineScreen() {
             <Text style={sortBy === 'rating' ? styles.timelineSortTextActive : styles.timelineSortText}>Sort: Rating</Text>
           </TouchableOpacity>
         </ScrollView>
-      </View>
+      </View> */}
       <View style={styles.spacerSmall} />
       <View style={{ height: 32, marginBottom: 0, marginTop: 0 }}>
         <ScrollView
@@ -130,7 +130,7 @@ export default function TimelineScreen() {
       {loading ? (
         <ActivityIndicator size="large" color="#EA4949" style={{ marginTop: 40 }} />
       ) : (
-        <ScrollView style={styles.timelineGigsColumn} contentContainerStyle={{ paddingBottom: 80 }}>
+        <ScrollView style={styles.timelineGigsColumn} contentContainerStyle={{ paddingBottom: 16 }}>
           {gigsForDisplay.length === 0 || gigsForDisplay.every(y => y.gigs.length === 0) ? (
             <Text style={styles.noGigsText}>No gigs found.</Text>
           ) : (
@@ -148,9 +148,8 @@ export default function TimelineScreen() {
                       key={userGig.id || idx}
                       style={[styles.card, styles.gigCard]}
                       onPress={() => {
-                        // Use the correct gig ID for navigation
-                        const gigId = userGig.gig?.id || userGig.id || idx;
-                        require('expo-router').useRouter().push(`/gig-detail/${gigId}`);
+                        // Navigate using UserGig ID, not Gig ID
+                        require('expo-router').useRouter().push(`/gig-detail/${userGig.id}`);
                       }}
                     >
                       <Text style={styles.gigArtist}>{userGig.gig.title}</Text>
